@@ -28,7 +28,7 @@ jobs:
 
       # 100% local-first build — no cloud keys, no backend, no network URLs.
       - name: Build release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --split-per-abi
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
