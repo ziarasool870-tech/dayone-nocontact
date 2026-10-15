@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android Auto Backup rules (data-safety requirement).
+     All local user data — streak prefs, journal/check-in database —
+     is included in the automatic Google backup. -->
+<full-backup-content>
+    <include domain="sharedpref" path="." />
+    <include domain="database" path="." />
+    <include domain="file" path="." />
+</full-backup-content>
