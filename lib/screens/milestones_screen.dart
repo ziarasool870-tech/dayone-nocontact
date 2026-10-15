@@ -1,5 +1,5 @@
-/// Milestones tab: unlock gallery at Day 7/14/30/60/90, shareable cards,
-/// and Pro-gated premium art. The viral engine lives here.
+/// Milestones tab: unlock gallery at Day 7/14/30/60/90/100/180/365,
+/// shareable cards, and Pro-gated premium art. The viral engine lives here.
 library;
 
 import 'package:flutter/material.dart';
@@ -70,8 +70,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
@@ -92,8 +91,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
                     const Expanded(
                       child: Text('Premium art packs',
                           style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800)),
+                              fontSize: 16, fontWeight: FontWeight.w800)),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -101,8 +99,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
                       decoration: BoxDecoration(
                         color: DayOneColors.goldSoft,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: DayOneColors.goldBorder),
+                        border: Border.all(color: DayOneColors.goldBorder),
                       ),
                       child: const Text('PRO',
                           style: TextStyle(
@@ -115,8 +112,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
                 const SizedBox(height: 4),
                 const Text(
                   'Dark & gold editions of every card. Made to be posted.',
-                  style: TextStyle(
-                      fontSize: 14.5, color: DayOneColors.muted),
+                  style: TextStyle(fontSize: 14.5, color: DayOneColors.muted),
                 ),
                 const SizedBox(height: 12),
                 if (!isPro)
@@ -129,8 +125,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
                           children: [
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text('Unlock premium art',
                                       style: TextStyle(
@@ -145,8 +140,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
                                 ],
                               ),
                             ),
-                            Icon(Icons.lock_outline,
-                                color: DayOneColors.gold),
+                            Icon(Icons.lock_outline, color: DayOneColors.gold),
                           ],
                         ),
                       ),
@@ -156,8 +150,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
                   ...streak_math.milestoneDays
                       .where((m) => unlocked.contains(m))
                       .map((m) => Padding(
-                            padding:
-                                const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.only(bottom: 10),
                             child: MilestoneCard(day: m, premium: true),
                           )),
                 if (isPro &&
@@ -166,8 +159,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
                         .isEmpty)
                   const Text(
                     'Unlock milestones to preview premium art here.',
-                    style: TextStyle(
-                        fontSize: 14.5, color: DayOneColors.muted),
+                    style: TextStyle(fontSize: 14.5, color: DayOneColors.muted),
                   ),
               ],
             ),
@@ -200,25 +192,25 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-              color: border, width: isNext ? 1.5 : 1),
+          border: Border.all(color: border, width: isNext ? 1.5 : 1),
         ),
         padding: const EdgeInsets.all(14),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (unlocked)
-              Text('★', style: TextStyle(fontSize: 24, color: fg))
+              // Icon, not Text('★'): the star glyph isn't in Lora and its
+              // fallback font has a huge line box that overflows the tile
+              // on small screens with large system fonts.
+              Icon(Icons.star_rounded, size: 24, color: fg)
             else if (isNext)
-              Text('◷', style: TextStyle(fontSize: 24, color: fg))
+              Icon(Icons.schedule, size: 24, color: fg)
             else
               Icon(Icons.lock_outline, size: 24, color: fg),
             const SizedBox(height: 8),
             Text('Day $day',
                 style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: fg)),
+                    fontSize: 17, fontWeight: FontWeight.w800, color: fg)),
             const SizedBox(height: 4),
             Text(
               unlocked
@@ -263,8 +255,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed:
-                    _sharing ? null : () => _share(day, premium: false),
+                onPressed: _sharing ? null : () => _share(day, premium: false),
                 icon: _sharing
                     ? const SizedBox(
                         width: 16,
@@ -280,9 +271,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: _sharing
-                      ? null
-                      : () => _share(day, premium: true),
+                  onPressed: _sharing ? null : () => _share(day, premium: true),
                   icon: const Icon(Icons.auto_awesome, size: 18),
                   label: const Text('Share premium art'),
                 ),

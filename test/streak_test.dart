@@ -4,8 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   // Fixed reference: 2026-10-15 12:00:00 UTC.
   final t0 = DateTime.utc(2026, 10, 15, 12).millisecondsSinceEpoch;
-  int daysLater(double d) =>
-      t0 + (d * Duration.millisecondsPerDay).round();
+  int daysLater(double d) => t0 + (d * Duration.millisecondsPerDay).round();
 
   group('daysElapsed', () {
     test('is 0 at the exact start moment', () {
@@ -44,13 +43,18 @@ void main() {
 
   group('milestones', () {
     // v4: milestones unlock against the DISPLAY day (start day = Day 1).
+    // v6: extended to 100 / 180 / 365 — same display-day semantics.
     test('unlock at exact day boundaries', () {
       expect(unlockedMilestones(5), isEmpty); // display Day 6
       expect(unlockedMilestones(6), [7]); // display Day 7
       expect(unlockedMilestones(7), [7]);
       expect(unlockedMilestones(14), [7, 14]);
       expect(unlockedMilestones(90), [7, 14, 30, 60, 90]);
-      expect(unlockedMilestones(200), [7, 14, 30, 60, 90]);
+      expect(unlockedMilestones(99), [7, 14, 30, 60, 90, 100]); // Day 100
+      expect(unlockedMilestones(179), [7, 14, 30, 60, 90, 100, 180]);
+      expect(unlockedMilestones(364),
+          [7, 14, 30, 60, 90, 100, 180, 365]); // Day 365
+      expect(unlockedMilestones(500), [7, 14, 30, 60, 90, 100, 180, 365]);
     });
 
     test('nextMilestone points forward', () {
@@ -58,16 +62,21 @@ void main() {
       expect(nextMilestone(6), 14); // display Day 7 -> next is 14
       expect(nextMilestone(7), 14);
       expect(nextMilestone(29), 60); // display Day 30 -> next is 60
-      expect(nextMilestone(90), isNull);
+      expect(nextMilestone(89), 100); // display Day 90 -> next is 100
+      expect(nextMilestone(99), 180); // display Day 100 -> next is 180
+      expect(nextMilestone(179), 365); // display Day 180 -> next is 365
+      expect(nextMilestone(364), isNull); // display Day 365 -> all unlocked
       expect(nextMilestone(500), isNull);
     });
 
     test('progressToNext is fractional and capped', () {
       // display Day 1 of 0..7 span: (1-0)/7
       expect(progressToNext(0), closeTo(1 / 7, 0.0001));
-      expect(progressToNext(90), 1.0);
+      expect(progressToNext(364), 1.0);
       // display Day 24 of 14..30 span: (24-14)/(30-14) = 10/16
       expect(progressToNext(23), closeTo(10 / 16, 0.0001));
+      // display Day 95 of 90..100 span: (95-90)/(100-90) = 5/10
+      expect(progressToNext(94), closeTo(5 / 10, 0.0001));
     });
   });
 

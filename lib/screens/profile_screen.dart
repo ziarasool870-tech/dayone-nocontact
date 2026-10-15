@@ -498,6 +498,112 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  /// "On · 8:00 PM" / "Off" for the notifications row.
+  String _reminderSummary(AppState app) {
+    if (!app.notificationsOn) return 'Off';
+    final t = TimeOfDay(hour: app.reminderHour, minute: app.reminderMinute)
+        .format(context);
+    return 'On · $t';
+  }
+
+  /// Gentle reminder settings: on/off toggle plus the daily time picker.
+  void _reminderSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Daily reminders',
+                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            const Text('One gentle nudge a day.',
+                style: TextStyle(fontSize: 15, color: DayOneColors.muted)),
+            const SizedBox(height: 12),
+            ListenableBuilder(
+              listenable: AppState.instance,
+              builder: (context, _) {
+                final app = AppState.instance;
+                final on = app.notificationsOn;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text('Reminders',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w600)),
+                        ),
+                        Switch(
+                          value: on,
+                          activeTrackColor: DayOneColors.sage,
+                          onChanged: (v) => app.setNotificationsOn(v),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 8),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: on ? () => _pickReminderTime(ctx) : null,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 4),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text('Reminder time',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: on
+                                          ? DayOneColors.ink
+                                          : DayOneColors.faint)),
+                            ),
+                            Text(
+                              TimeOfDay(
+                                      hour: app.reminderHour,
+                                      minute: app.reminderMinute)
+                                  .format(context),
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: on
+                                      ? DayOneColors.terracottaDeep
+                                      : DayOneColors.faint),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickReminderTime(BuildContext ctx) async {
+    final app = AppState.instance;
+    final picked = await showTimePicker(
+      context: ctx,
+      initialTime:
+          TimeOfDay(hour: app.reminderHour, minute: app.reminderMinute),
+      helpText: 'When should we nudge you?',
+    );
+    if (picked != null) {
+      await app.setReminderTime(picked.hour, picked.minute);
+    }
+  }
+
   /// Opens the email app addressed to support, with a prefilled subject.
   Future<void> _sendFeedback() async {
     final uri = Uri(
@@ -759,8 +865,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 8),
                 _row('Start date', _fmtDate(app.streakStartMs),
                     onTap: _editStartDate),
-                _row('Notifications', app.notificationsOn ? 'On' : 'Off',
-                    onTap: () => app.setNotificationsOn(!app.notificationsOn)),
+                _row('Notifications', _reminderSummary(app),
+                    onTap: _reminderSheet),
                 _row('Widget theme', _widgetThemeLabel,
                     onTap: () => _widgetThemeSheet(isPro)),
                 _row('Share Day One', 'Tell a friend who needs this',

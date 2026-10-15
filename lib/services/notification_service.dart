@@ -73,6 +73,7 @@ class NotificationService {
   }
 
   Future<void> cancelDailyReminder() async {
+    await init();
     await _plugin.cancel(_checkInId);
   }
 

@@ -26,6 +26,8 @@ class AppState extends ChangeNotifier {
   int totalCleanDays = 0;
   String userName = '';
   bool notificationsOn = true;
+  int reminderHour = 20;
+  int reminderMinute = 0;
 
   /// Milestone days unlocked but not yet celebrated in this session.
   final List<int> pendingCelebrations = [];
@@ -53,6 +55,12 @@ class AppState extends ChangeNotifier {
     totalCleanDays = prefs.totalCleanDays;
     userName = prefs.userName;
     notificationsOn = prefs.notificationsOn;
+    reminderHour = prefs.reminderHour;
+    reminderMinute = prefs.reminderMinute;
+    // Keep the home widget honest on every launch and after imports:
+    // without this, an imported backup's streak wouldn't reach the
+    // widget until the next 30-minute system tick.
+    await _pushWidget();
 
     // Load history into longest/total if prefs are empty (fresh import).
     if (streakStartMs != null && (longestDays == 0 && totalCleanDays == 0)) {
@@ -171,15 +179,39 @@ class AppState extends ChangeNotifier {
     final prefs = await PrefsService.instance();
     await prefs.setNotificationsOn(on);
     notificationsOn = on;
-    if (on) {
-      await NotificationService.instance.scheduleDailyReminder(
-        hour: prefs.reminderHour,
-        minute: prefs.reminderMinute,
-      );
-    } else {
-      await NotificationService.instance.cancelDailyReminder();
-    }
+    // UI first: the toggle must never desync if the platform call throws.
     notifyListeners();
+    try {
+      if (on) {
+        await NotificationService.instance.scheduleDailyReminder(
+          hour: prefs.reminderHour,
+          minute: prefs.reminderMinute,
+        );
+      } else {
+        await NotificationService.instance.cancelDailyReminder();
+      }
+    } catch (_) {
+      // Notification plumbing is best-effort; the setting itself is saved.
+    }
+  }
+
+  /// Persists the daily reminder time and reschedules the notification.
+  Future<void> setReminderTime(int hour, int minute) async {
+    final prefs = await PrefsService.instance();
+    await prefs.setReminderTime(hour, minute);
+    reminderHour = hour;
+    reminderMinute = minute;
+    notifyListeners();
+    if (notificationsOn) {
+      try {
+        await NotificationService.instance.scheduleDailyReminder(
+          hour: hour,
+          minute: minute,
+        );
+      } catch (_) {
+        // Best-effort; the time itself is saved.
+      }
+    }
   }
 
   /// Pushes the current streak to the Android home-screen widget.

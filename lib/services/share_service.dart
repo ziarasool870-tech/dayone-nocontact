@@ -22,13 +22,15 @@ const Map<int, String> milestoneMessages = {
   30: 'One month of choosing yourself.',
   60: 'Two months. Look how far you\'ve come.',
   90: '90 days. You\'re someone new now.',
+  100: '100 days. Triple digits of choosing yourself.',
+  180: 'Six months. This is who you are now.',
+  365: 'One full year. You did the hardest thing.',
 };
 
 /// The card widget itself. Rendered off-screen inside a [RepaintBoundary]
 /// for capture; also previewed in the Milestones tab.
 class MilestoneCard extends StatelessWidget {
-  const MilestoneCard(
-      {super.key, required this.day, this.premium = false});
+  const MilestoneCard({super.key, required this.day, this.premium = false});
 
   final int day;
   final bool premium;
@@ -67,10 +69,8 @@ class MilestoneCard extends StatelessWidget {
             height: 64,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(colors: [
-                DayOneColors.terracotta,
-                Color(0xFFE8A07E)
-              ]),
+              gradient: LinearGradient(
+                  colors: [DayOneColors.terracotta, Color(0xFFE8A07E)]),
             ),
             alignment: Alignment.center,
             child: const Text('♥',
@@ -129,10 +129,8 @@ class MilestoneCard extends StatelessWidget {
             height: 64,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(colors: [
-                DayOneColors.gold,
-                Color(0xFFE8C89F)
-              ]),
+              gradient: LinearGradient(
+                  colors: [DayOneColors.gold, Color(0xFFE8C89F)]),
             ),
             alignment: Alignment.center,
             child: const Text('♥',
@@ -186,12 +184,11 @@ class ShareService {
     try {
       // Let the off-screen widget lay out and paint.
       await Future<void>.delayed(const Duration(milliseconds: 120));
-      final boundary = key.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
+      final boundary =
+          key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) return false;
       final image = await boundary.toImage(pixelRatio: 3.0);
-      final bytes =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       if (bytes == null) return false;
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/dayone-day$day.png');

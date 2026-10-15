@@ -237,17 +237,21 @@ class _BreathCircleState extends State<BreathCircle>
 
 /// Full-screen milestone-unlock celebration with confetti.
 class MilestoneCelebration extends StatefulWidget {
-  const MilestoneCelebration({super.key, required this.day});
+  const MilestoneCelebration({super.key, required this.day, this.message});
 
   final int day;
 
+  /// Per-milestone line shown under the title (falls back to a generic
+  /// warm line when null).
+  final String? message;
+
   /// Shows the celebration as a dialog. Returns when dismissed.
-  static Future<void> show(BuildContext context, int day) {
+  static Future<void> show(BuildContext context, int day, {String? message}) {
     return showDialog(
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.black54,
-      builder: (_) => MilestoneCelebration(day: day),
+      builder: (_) => MilestoneCelebration(day: day, message: message),
     );
   }
 
@@ -316,9 +320,10 @@ class _MilestoneCelebrationState extends State<MilestoneCelebration>
                           ),
                         ),
                         alignment: Alignment.center,
-                        child: const Text('★',
-                            style:
-                                TextStyle(fontSize: 34, color: Colors.white)),
+                        // Icon, not Text('★'): the star glyph isn't in Lora
+                        // and its fallback metrics can mis-center it.
+                        child: const Icon(Icons.star_rounded,
+                            size: 40, color: Colors.white),
                       ),
                       const SizedBox(height: 16),
                       Text('Day ${widget.day} unlocked!',
@@ -327,10 +332,11 @@ class _MilestoneCelebrationState extends State<MilestoneCelebration>
                               fontWeight: FontWeight.w800,
                               color: DayOneColors.ink)),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Look how far you\'ve come.\nShare it — someone needs to see this.',
+                      Text(
+                        widget.message ??
+                            'Look how far you\'ve come.\nShare it — someone needs to see this.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                             color: DayOneColors.muted,
                             fontSize: 15.5,
                             height: 1.5),

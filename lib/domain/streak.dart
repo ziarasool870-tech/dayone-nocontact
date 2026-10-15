@@ -64,7 +64,7 @@ class StreakState {
 }
 
 /// Milestone days that unlock shareable cards. Single source of truth.
-const List<int> milestoneDays = [7, 14, 30, 60, 90];
+const List<int> milestoneDays = [7, 14, 30, 60, 90, 100, 180, 365];
 
 /// Full elapsed days between [startMs] and [nowMs], floored. Never negative.
 int daysElapsed(int startMs, int nowMs) {
@@ -146,7 +146,6 @@ StreakState recordRelapse(StreakState state, int nowMs) {
 /// Quote of the day index from a pack of [packLength] quotes.
 int quoteIndexFor(DateTime date, int packLength) {
   if (packLength <= 0) return 0;
-  final dayOfYear =
-      date.difference(DateTime(date.year, 1, 1)).inDays;
+  final dayOfYear = date.difference(DateTime(date.year, 1, 1)).inDays;
   return dayOfYear % packLength;
 }

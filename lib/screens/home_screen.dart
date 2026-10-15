@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../core/content.dart';
 import '../data/database.dart';
 import '../domain/streak.dart' as streak_math;
+import '../services/share_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/premium.dart';
@@ -48,7 +49,8 @@ class _HomeScreenState extends State<HomeScreen> {
     app.consumeCelebrations();
     for (final d in days) {
       if (!mounted) break;
-      await MilestoneCelebration.show(context, d);
+      await MilestoneCelebration.show(context, d,
+          message: milestoneMessages[d]);
     }
   }
 

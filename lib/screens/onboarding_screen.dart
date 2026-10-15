@@ -20,6 +20,9 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _pager = PageController();
   int _page = 0;
+  // Guards against double-taps skipping a page: _page only updates via
+  // onPageChanged, which lags the 320ms animation.
+  bool _animating = false;
   DateTime _startDate = DateTime.now();
   bool _forSelf = true;
   // Month currently shown in the start-date calendar grid.
@@ -27,14 +30,44 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       DateTime(DateTime.now().year, DateTime.now().month);
 
   void _next() {
+    if (_animating) return;
     if (_page < 2) {
-      _pager.nextPage(
-        duration: const Duration(milliseconds: 320),
-        curve: Curves.easeOutCubic,
-      );
+      _animating = true;
+      _pager
+          .nextPage(
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeOutCubic,
+          )
+          .whenComplete(() => _animating = false);
     } else {
       _finish();
     }
+  }
+
+  void _back() {
+    if (_animating || _page <= 0) return;
+    _animating = true;
+    _pager
+        .previousPage(
+          duration: const Duration(milliseconds: 320),
+          curve: Curves.easeOutCubic,
+        )
+        .whenComplete(() => _animating = false);
+  }
+
+  /// Calm back chevron for pages 2–3 — a wrong date should never
+  /// feel like a trap.
+  Widget _backRow() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: IconButton(
+        onPressed: _back,
+        tooltip: 'Back',
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        icon: const Icon(Icons.arrow_back, size: 22, color: DayOneColors.muted),
+      ),
+    );
   }
 
   Future<void> _finish() async {
@@ -50,36 +83,44 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: PageView(
-                controller: _pager,
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (i) => setState(() => _page = i),
-                children: [
-                  _welcomePage(),
-                  _datePage(),
-                  _setupPage(),
-                ],
+    // System back goes to the previous onboarding page instead of
+    // killing the flow (page 1 may still exit).
+    return PopScope(
+      canPop: _page == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _page > 0) _back();
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: PageView(
+                  controller: _pager,
+                  physics: const NeverScrollableScrollPhysics(),
+                  onPageChanged: (i) => setState(() => _page = i),
+                  children: [
+                    _welcomePage(),
+                    _datePage(),
+                    _setupPage(),
+                  ],
+                ),
               ),
-            ),
-            _dots(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-              child: SizedBox(
-                width: double.infinity,
-                child: PressScale(
-                  child: ElevatedButton(
-                    onPressed: _next,
-                    child: Text(_page == 2 ? 'Enter Day One' : 'Continue'),
+              _dots(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: PressScale(
+                    child: ElevatedButton(
+                      onPressed: _next,
+                      child: Text(_page == 2 ? 'Enter Day One' : 'Continue'),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -158,7 +199,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
+          _backRow(),
+          const SizedBox(height: 12),
           const Text('STEP 1 OF 2',
               style: TextStyle(
                   fontSize: 11,
@@ -370,7 +413,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 28),
+                const SizedBox(height: 16),
+                _backRow(),
+                const SizedBox(height: 12),
                 const Text('STEP 2 OF 2',
                     style: TextStyle(
                         fontSize: 11,
