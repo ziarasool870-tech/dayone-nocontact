@@ -44,6 +44,10 @@ class AppState extends ChangeNotifier {
     await DayOneDatabase.instance.database; // ensure schema exists
     await BillingService.instance.init();
 
+    // A data wipe can re-run init(): never carry celebrations
+    // from a deleted life into the new one.
+    pendingCelebrations.clear();
+
     streakStartMs = prefs.streakStartMs;
     longestDays = prefs.longestDays;
     totalCleanDays = prefs.totalCleanDays;

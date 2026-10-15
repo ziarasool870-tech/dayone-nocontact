@@ -8,13 +8,20 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/content.dart';
 import '../data/database.dart';
+import '../data/prefs.dart';
 import '../domain/streak.dart' as streak_math;
 import '../services/backup_service.dart';
 import '../services/billing_service.dart';
+import '../services/notification_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/premium.dart';
+import 'main_shell.dart';
+import 'onboarding_screen.dart';
 import 'paywall_screen.dart';
+
+/// Support inbox for the "Send feedback" row.
+const kSupportEmail = 'support@dayonenocontact.app';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -359,6 +366,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: DayOneColors.card,
+        scrollable: true,
         title: const Text('Replace current data?',
             style: TextStyle(
                 color: DayOneColors.ink, fontWeight: FontWeight.w800)),
@@ -487,6 +495,103 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Opens the email app addressed to support, with a prefilled subject.
+  Future<void> _sendFeedback() async {
+    final uri = Uri(
+      scheme: 'mailto',
+      path: kSupportEmail,
+      queryParameters: {'subject': 'Day One feedback'},
+    );
+    final ok = await launchUrl(uri);
+    // No email app installed: say so gently, with the address in reach.
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'No email app found — you can write to us at $kSupportEmail.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  /// Honest, calm data deletion: confirm → wipe the database and all
+  /// prefs → reset the widget and reminder → start over at onboarding.
+  Future<void> _confirmDeleteData() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: DayOneColors.card,
+        scrollable: true,
+        title: const Text('Delete everything?',
+            style: TextStyle(
+                color: DayOneColors.ink, fontWeight: FontWeight.w800)),
+        content: const Text(
+          'This permanently removes your journal, check-ins, streak history, and settings from this phone. There\'s no undo — your data never leaves this device, so we can\'t recover it.\n\nIf you\'re hurting right now, consider keeping an encrypted backup first (Export backup above).',
+          style:
+              TextStyle(fontSize: 15, height: 1.55, color: DayOneColors.muted),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Keep my data')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete everything',
+                style: TextStyle(color: DayOneColors.sos)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    // Wipe everything: database rows, all preferences.
+    await DayOneDatabase.instance.wipeAll();
+    final prefs = await PrefsService.instance();
+    // A purchase is not "my data" — a paying user keeps Pro through
+    // the wipe (their words are deleted, their purchase is not).
+    final wasPro = prefs.isPro;
+    final proId = prefs.proProductId;
+    await prefs.clearAll();
+    if (wasPro) await prefs.setPro(true, productId: proId);
+    // Cancel the stale pre-wipe reminder BEFORE init(), so init()
+    // re-schedules exactly like a fresh install and the onboarding
+    // toggle tells the truth.
+    await NotificationService.instance.cancelDailyReminder();
+    // Reset in-memory state (init re-reads the now-empty prefs).
+    await AppState.instance.init();
+    // Leave no widget streak or theme behind for a deleted life.
+    try {
+      await HomeWidget.saveWidgetData<int>('streak_start_ms', 0);
+      await HomeWidget.saveWidgetData<String>('widget_theme', 'cream');
+      await HomeWidget.updateWidget(
+        qualifiedAndroidName: 'com.dayone.nocontact.DayOneWidgetProvider',
+      );
+    } catch (_) {
+      // Widget is best-effort.
+    }
+
+    if (!mounted) return;
+    // Start over, like a fresh install.
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (ctx) => OnboardingScreen(
+          onFinished: () async {
+            final p = await PrefsService.instance();
+            await p.setOnboardingDone(true);
+            if (ctx.mounted) {
+              Navigator.of(ctx).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const MainShell()),
+                (r) => false,
+              );
+            }
+          },
+        ),
+      ),
+      (r) => false,
     );
   }
 
@@ -669,6 +774,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontWeight: FontWeight.w800,
                         color: DayOneColors.muted)),
                 const SizedBox(height: 8),
+                // Gentle, one-time inline explainer — never a popup.
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.shield_outlined,
+                            color: DayOneColors.sage, size: 22),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Protect your streak',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800)),
+                              SizedBox(height: 4),
+                              Text(
+                                'Your journal and streak are backed up automatically with your Android backup. For extra safety, keep an encrypted copy with Export backup below — your words never leave this phone unless you move them.',
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    height: 1.55,
+                                    color: DayOneColors.muted),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 _row('Export backup',
                     _busyBackup ? 'Working…' : 'Encrypted file you keep',
                     onTap: _busyBackup
@@ -696,6 +835,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 return '';
                               },
                             )),
+                _row('Delete my data', 'Remove everything from this phone',
+                    destructive: true, onTap: _confirmDeleteData),
                 const SizedBox(height: 16),
                 const Text('About',
                     style: TextStyle(
@@ -705,6 +846,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 8),
                 _row('Why no contact works', '', onTap: _whySheet),
                 _row('A gentle note (disclaimer)', '', onTap: _disclaimerSheet),
+                _row('Send feedback', 'Tell us what\'s helping, or what hurts',
+                    onTap: _sendFeedback),
                 const SizedBox(height: 20),
                 const Center(
                   child: Text(
@@ -743,7 +886,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _row(String title, String sub, {VoidCallback? onTap}) {
+  Widget _row(String title, String sub,
+      {VoidCallback? onTap, bool destructive = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Card(
@@ -759,8 +903,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(title,
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600)),
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: destructive
+                                  ? DayOneColors.sos
+                                  : DayOneColors.ink)),
                       if (sub.isNotEmpty)
                         Text(sub,
                             style: const TextStyle(

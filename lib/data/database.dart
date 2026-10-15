@@ -90,8 +90,8 @@ class DayOneDatabase {
   /// Fraction of held check-ins (0.0–1.0). 0 when there are none.
   Future<double> checkInRate() async {
     final db = await database;
-    final rows = await db.rawQuery(
-        'SELECT COUNT(*) AS total, SUM(held) AS held FROM checkins');
+    final rows = await db
+        .rawQuery('SELECT COUNT(*) AS total, SUM(held) AS held FROM checkins');
     final total = (rows.first['total'] as num?)?.toInt() ?? 0;
     if (total == 0) return 0.0;
     final held = (rows.first['held'] as num?)?.toInt() ?? 0;
@@ -132,6 +132,16 @@ class DayOneDatabase {
     await db.delete('journal', where: 'id = ?', whereArgs: [id]);
   }
 
+  /// Deletes every user row (journal, check-ins, streak history).
+  /// Used by "Delete my data" — the tables themselves are kept, so the
+  /// app keeps working without a restart.
+  Future<void> wipeAll() async {
+    final db = await database;
+    await db.delete('journal');
+    await db.delete('checkins');
+    await db.delete('streak_history');
+  }
+
   Future<List<Map<String, Object?>>> allJournalEntries() async {
     final db = await database;
     return db.query('journal', orderBy: 'created_ms DESC');
@@ -139,8 +149,7 @@ class DayOneDatabase {
 
   Future<int> journalCount() async {
     final db = await database;
-    final rows =
-        await db.rawQuery('SELECT COUNT(*) AS c FROM journal');
+    final rows = await db.rawQuery('SELECT COUNT(*) AS c FROM journal');
     return (rows.first['c'] as num?)?.toInt() ?? 0;
   }
 

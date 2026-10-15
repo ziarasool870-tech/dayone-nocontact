@@ -1,8 +1,10 @@
 /// Typed wrapper over SharedPreferences for Day One settings.
 ///
-/// Keys are namespaced with `dayone.` — the Android home-screen widget reads
-/// `streak_start_ms` directly from the same prefs file, so key names must
-/// stay stable. See android widget code for the matching reader.
+/// Keys are namespaced with `dayone.`. NOTE: the Android home-screen widget
+/// does NOT read this file — it reads `streak_start_ms` / `widget_theme`
+/// from the separate `HomeWidgetPreferences` file, written via
+/// `HomeWidget.saveWidgetData` (see AppState._pushWidget). Keep those
+/// string keys stable instead.
 library;
 
 import 'dart:convert';
@@ -43,8 +45,11 @@ class PrefsService {
   static const kHiddenDefaultReasons = 'dayone.hidden_default_reasons';
 
   bool get onboardingDone => _prefs.getBool(kOnboardingDone) ?? false;
-  Future<void> setOnboardingDone(bool v) =>
-      _prefs.setBool(kOnboardingDone, v);
+  Future<void> setOnboardingDone(bool v) => _prefs.setBool(kOnboardingDone, v);
+
+  /// Removes every stored setting. Used by "Delete my data" — after
+  /// this the app behaves like a fresh install.
+  Future<void> clearAll() => _prefs.clear();
 
   String get userName => _prefs.getString(kUserName) ?? '';
   Future<void> setUserName(String v) => _prefs.setString(kUserName, v);
@@ -91,8 +96,7 @@ class PrefsService {
 
   Future<void> markMilestoneSeen(int day) async {
     final seen = milestonesSeen..add(day);
-    await _prefs.setString(
-        kMilestonesSeen, seen.map((e) => '$e').join(','));
+    await _prefs.setString(kMilestonesSeen, seen.map((e) => '$e').join(','));
   }
 
   /// The user's own SOS reasons, shown above the defaults.

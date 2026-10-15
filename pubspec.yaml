@@ -42,6 +42,10 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
   sqflite_common_ffi: ^2.4.4
+  # Directly imported by widget tests (platform fakes).
+  in_app_purchase_platform_interface: ^1.4.1
+  plugin_platform_interface: ^2.1.8
+  url_launcher_platform_interface: ^2.3.2
 
 flutter:
   uses-material-design: true

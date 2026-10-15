@@ -18,6 +18,8 @@ class JournalScreen extends StatefulWidget {
 class _JournalScreenState extends State<JournalScreen> {
   List<Map<String, Object?>> _entries = [];
   bool _loading = true;
+  final _searchCtrl = TextEditingController();
+  String _query = '';
 
   @override
   void initState() {
@@ -25,9 +27,25 @@ class _JournalScreenState extends State<JournalScreen> {
     _reload();
   }
 
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  /// Entries matching the search query (title or body, case-insensitive).
+  List<Map<String, Object?>> get _filtered {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return _entries;
+    return _entries.where((e) {
+      final title = ((e['title'] as String?) ?? '').toLowerCase();
+      final body = ((e['body'] as String?) ?? '').toLowerCase();
+      return title.contains(q) || body.contains(q);
+    }).toList();
+  }
+
   Future<void> _reload() async {
-    final entries =
-        await DayOneDatabase.instance.allJournalEntries();
+    final entries = await DayOneDatabase.instance.allJournalEntries();
     if (mounted) {
       setState(() {
         _entries = entries;
@@ -38,8 +56,7 @@ class _JournalScreenState extends State<JournalScreen> {
 
   Future<void> _openEditor({Map<String, Object?>? existing}) async {
     final changed = await Navigator.of(context).push<bool>(
-      FadeSlidePageRoute(
-          child: JournalEditor(entry: existing)),
+      FadeSlidePageRoute(child: JournalEditor(entry: existing)),
     );
     if (changed == true) _reload();
   }
@@ -60,8 +77,8 @@ class _JournalScreenState extends State<JournalScreen> {
               child: const Text('Keep it')),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete',
-                style: TextStyle(color: DayOneColors.sos)),
+            child:
+                const Text('Delete', style: TextStyle(color: DayOneColors.sos)),
           ),
         ],
       ),
@@ -80,85 +97,128 @@ class _JournalScreenState extends State<JournalScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _entries.isEmpty
               ? _empty()
-              : RefreshIndicator(
-                  onRefresh: _reload,
-                  child: ListView.separated(
-                    padding:
-                        const EdgeInsets.fromLTRB(20, 8, 20, 120),
-                    itemCount: _entries.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: 10),
-                    itemBuilder: (context, i) {
-                      final e = _entries[i];
-                      final created =
-                          DateTime.fromMillisecondsSinceEpoch(
-                              (e['created_ms'] as num).toInt());
-                      final title =
-                          (e['title'] as String?) ?? '';
-                      final body = (e['body'] as String?) ?? '';
-                      return Card(
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(18),
-                          onTap: () => _openEditor(existing: e),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        DateFormat('MMM d, yyyy')
-                                            .format(created),
-                                        style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 1,
-                                            color: DayOneColors
-                                                .terracotta),
-                                      ),
-                                    ),
-                                    InkWell(
-                                      onTap: () => _delete(
-                                          (e['id'] as num).toInt()),
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(4),
-                                        child: Icon(
-                                            Icons.delete_outline,
-                                            size: 18,
-                                            color: DayOneColors.muted),
-                                      ),
-                                    ),
-                                  ],
+              : Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                      child: TextField(
+                        controller: _searchCtrl,
+                        onChanged: (v) => setState(() => _query = v),
+                        textInputAction: TextInputAction.search,
+                        style: const TextStyle(color: DayOneColors.ink),
+                        decoration: InputDecoration(
+                          hintText: 'Search your entries…',
+                          hintStyle: const TextStyle(color: DayOneColors.muted),
+                          prefixIcon: const Icon(Icons.search,
+                              color: DayOneColors.muted),
+                          suffixIcon: _query.isEmpty
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.clear,
+                                      color: DayOneColors.muted),
+                                  onPressed: () {
+                                    _searchCtrl.clear();
+                                    setState(() => _query = '');
+                                  },
                                 ),
-                                if (title.isNotEmpty) ...[
-                                  const SizedBox(height: 6),
-                                  Text(title,
-                                      style: const TextStyle(
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w700)),
-                                ],
-                                if (body.isNotEmpty) ...[
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    body,
-                                    maxLines: 4,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        fontSize: 15.5,
-                                        height: 1.5,
-                                        color: DayOneColors.ink),
-                                  ),
-                                ],
-                              ],
-                            ),
+                          filled: true,
+                          fillColor: DayOneColors.card,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
                           ),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 12),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _filtered.isEmpty
+                          ? _noMatches()
+                          : RefreshIndicator(
+                              onRefresh: _reload,
+                              child: ListView.separated(
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 8, 20, 120),
+                                itemCount: _filtered.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 10),
+                                itemBuilder: (context, i) {
+                                  final e = _filtered[i];
+                                  final created =
+                                      DateTime.fromMillisecondsSinceEpoch(
+                                          (e['created_ms'] as num).toInt());
+                                  final title = (e['title'] as String?) ?? '';
+                                  final body = (e['body'] as String?) ?? '';
+                                  return Card(
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(18),
+                                      onTap: () => _openEditor(existing: e),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    DateFormat('MMM d, yyyy')
+                                                        .format(created),
+                                                    style: const TextStyle(
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        letterSpacing: 1,
+                                                        color: DayOneColors
+                                                            .terracotta),
+                                                  ),
+                                                ),
+                                                InkWell(
+                                                  onTap: () => _delete(
+                                                      (e['id'] as num).toInt()),
+                                                  child: const Padding(
+                                                    padding: EdgeInsets.all(4),
+                                                    child: Icon(
+                                                        Icons.delete_outline,
+                                                        size: 18,
+                                                        color:
+                                                            DayOneColors.muted),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            if (title.isNotEmpty) ...[
+                                              const SizedBox(height: 6),
+                                              Text(title,
+                                                  style: const TextStyle(
+                                                      fontSize: 17,
+                                                      fontWeight:
+                                                          FontWeight.w700)),
+                                            ],
+                                            if (body.isNotEmpty) ...[
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                body,
+                                                maxLines: 4,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    fontSize: 15.5,
+                                                    height: 1.5,
+                                                    color: DayOneColors.ink),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                    ),
+                  ],
                 ),
       floatingActionButton: _entries.isEmpty
           ? null
@@ -172,8 +232,7 @@ class _JournalScreenState extends State<JournalScreen> {
                 label: const Text('New entry'),
               ),
             ),
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.endFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -197,21 +256,51 @@ class _JournalScreenState extends State<JournalScreen> {
             ),
             const SizedBox(height: 18),
             const Text('Write it here, not to them.',
-                style: TextStyle(
-                    fontSize: 17, fontWeight: FontWeight.w800)),
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
             const Text(
               'The text you don\'t send is the streak you keep. Start your first entry.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 15.5,
-                  height: 1.5,
-                  color: DayOneColors.muted),
+                  fontSize: 15.5, height: 1.5, color: DayOneColors.muted),
             ),
             const SizedBox(height: 18),
             ElevatedButton(
               onPressed: () => _openEditor(),
               child: const Text('Write first entry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Warm empty state when the search matches nothing.
+  Widget _noMatches() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.search_off, size: 40, color: DayOneColors.faint),
+            const SizedBox(height: 14),
+            const Text('Nothing found',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 8),
+            Text(
+              'No entries mention "${_query.trim()}" yet.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  fontSize: 15, height: 1.5, color: DayOneColors.muted),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () {
+                _searchCtrl.clear();
+                setState(() => _query = '');
+              },
+              child: const Text('Clear search'),
             ),
           ],
         ),
@@ -237,10 +326,10 @@ class _JournalEditorState extends State<JournalEditor> {
   @override
   void initState() {
     super.initState();
-    _title = TextEditingController(
-        text: (widget.entry?['title'] as String?) ?? '');
-    _body = TextEditingController(
-        text: (widget.entry?['body'] as String?) ?? '');
+    _title =
+        TextEditingController(text: (widget.entry?['title'] as String?) ?? '');
+    _body =
+        TextEditingController(text: (widget.entry?['body'] as String?) ?? '');
   }
 
   @override
@@ -261,8 +350,7 @@ class _JournalEditorState extends State<JournalEditor> {
     setState(() => _saving = true);
     final existing = widget.entry;
     if (existing == null) {
-      await DayOneDatabase.instance
-          .insertJournal(title: title, body: body);
+      await DayOneDatabase.instance.insertJournal(title: title, body: body);
     } else {
       await DayOneDatabase.instance.updateJournal(
         id: (existing['id'] as num).toInt(),
@@ -303,8 +391,7 @@ class _JournalEditorState extends State<JournalEditor> {
                 filled: false,
                 contentPadding: EdgeInsets.zero,
               ),
-              style: const TextStyle(
-                  fontSize: 19, fontWeight: FontWeight.w800),
+              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
             ),
             const Divider(color: DayOneColors.line, height: 24),
             Expanded(
@@ -315,8 +402,7 @@ class _JournalEditorState extends State<JournalEditor> {
                 textAlignVertical: TextAlignVertical.top,
                 autofocus: isNew,
                 decoration: const InputDecoration(
-                  hintText:
-                      'What are you feeling right now? Write it all out…',
+                  hintText: 'What are you feeling right now? Write it all out…',
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
@@ -327,8 +413,7 @@ class _JournalEditorState extends State<JournalEditor> {
               ),
             ),
             const Text('Private · stored only on your phone',
-                style: TextStyle(
-                    fontSize: 11.5, color: DayOneColors.muted)),
+                style: TextStyle(fontSize: 11.5, color: DayOneColors.muted)),
           ],
         ),
       ),
