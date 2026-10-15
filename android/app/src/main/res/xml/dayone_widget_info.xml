@@ -6,6 +6,6 @@
     android:minResizeHeight="110dp"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/dayone_widget"
-    android:description="Day One streak counter — your no-contact days at a glance."
+    android:description="@string/dayone_widget_description"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen" />
