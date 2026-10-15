@@ -32,14 +32,14 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
-// Force JVM target 11 for every Kotlin Android plugin module (e.g. home_widget
-// ships bytecode built for JVM 11 while defaulting its own compile target to
-// 1.8, which fails release builds with "Cannot inline bytecode built with JVM
-// target 11 into bytecode built with JVM target 1.8"). withPlugin avoids the
-// afterEvaluate ordering problem entirely.
+// Force JVM target 11 on every Kotlin compile task of plugin modules (e.g.
+// home_widget 0.8.1 hardcodes kotlinOptions.jvmTarget="1.8" in its own
+// build.gradle while inlining JVM-11 bytecode, which fails release builds).
+// Task-level config beats the module's own setting; withPlugin + configureEach
+// avoids the afterEvaluate ordering problem entirely.
 subprojects {
     pluginManager.withPlugin("org.jetbrains.kotlin.android") {
-        extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension> {
+        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
             compilerOptions {
                 jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
             }
