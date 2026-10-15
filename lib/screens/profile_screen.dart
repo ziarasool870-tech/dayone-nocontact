@@ -4,9 +4,11 @@ library;
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/content.dart';
 import '../data/database.dart';
+import '../domain/streak.dart' as streak_math;
 import '../services/backup_service.dart';
 import '../services/billing_service.dart';
 import '../state/app_state.dart';
@@ -33,6 +35,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _loadStats();
     _loadWidgetTheme();
+    // Keep journal/milestone counts fresh: start-date edits and
+    // relapses (from the Home tab) change the numbers while this
+    // screen is kept alive in the IndexedStack.
+    AppState.instance.addListener(_loadStats);
+  }
+
+  @override
+  void dispose() {
+    AppState.instance.removeListener(_loadStats);
+    super.dispose();
   }
 
   /// Reads the widget theme previously chosen via home_widget data.
@@ -67,12 +79,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Widget theme',
-                style:
-                    TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
             const Text('How your home-screen widget looks.',
-                style:
-                    TextStyle(fontSize: 15, color: DayOneColors.muted)),
+                style: TextStyle(fontSize: 15, color: DayOneColors.muted)),
             const SizedBox(height: 14),
             _themeOption(
               title: 'Cream',
@@ -111,14 +121,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             if (locked) {
               Navigator.of(context).pop();
               Navigator.of(context).push(
-                FadeSlidePageRoute(
-                    child: const PaywallScreen()),
+                FadeSlidePageRoute(child: const PaywallScreen()),
               );
               return;
             }
             try {
-              await HomeWidget.saveWidgetData<String>(
-                  'widget_theme', value);
+              await HomeWidget.saveWidgetData<String>('widget_theme', value);
               await HomeWidget.updateWidget(
                 qualifiedAndroidName:
                     'com.dayone.nocontact.DayOneWidgetProvider',
@@ -143,8 +151,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: value == 'midnight'
                         ? const Color(0xFF23201C)
                         : DayOneColors.cream,
-                    border: Border.all(
-                        color: DayOneColors.cardBorder),
+                    border: Border.all(color: DayOneColors.cardBorder),
                   ),
                   alignment: Alignment.center,
                   child: Text('12',
@@ -163,18 +170,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Text(title,
                               style: const TextStyle(
-                                  fontSize: 16.5,
-                                  fontWeight: FontWeight.w700)),
+                                  fontSize: 16.5, fontWeight: FontWeight.w700)),
                           if (locked) ...[
                             const SizedBox(width: 8),
                             Container(
-                              padding:
-                                  const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
                                 color: DayOneColors.goldSoft,
-                                borderRadius:
-                                    BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: const Text('PRO',
                                   style: TextStyle(
@@ -187,8 +191,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       Text(sub,
                           style: const TextStyle(
-                              fontSize: 14.5,
-                              color: DayOneColors.muted)),
+                              fontSize: 14.5, color: DayOneColors.muted)),
                     ],
                   ),
                 ),
@@ -214,20 +217,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final jc = await db.journalCount();
     final rate = await db.checkInRate();
     if (!mounted) return;
+    // Milestone count is display-day based (Day 1 = start day).
+    final days = AppState.instance.elapsedDays;
     setState(() {
       _journalCount = jc;
       _checkInRate = rate;
-      _milestonesUnlocked =
-          AppState.instance.elapsedDays >= 90 ? 5 : 0; // recomputed below
+      _milestonesUnlocked = streak_math.unlockedMilestones(days).length;
     });
-    // Accurate milestone count:
-    final days = AppState.instance.elapsedDays;
-    if (mounted) {
-      setState(() {
-        _milestonesUnlocked =
-            [7, 14, 30, 60, 90].where((m) => days >= m).length;
-      });
-    }
   }
 
   Future<void> _editName() async {
@@ -269,8 +265,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _editStartDate() async {
     final current = AppState.instance.streakStartMs == null
         ? DateTime.now()
-        : DateTime.fromMillisecondsSinceEpoch(
-            AppState.instance.streakStartMs!);
+        : DateTime.fromMillisecondsSinceEpoch(AppState.instance.streakStartMs!);
     final picked = await showDatePicker(
       context: context,
       initialDate: current,
@@ -329,8 +324,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: const Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(ctrl.text),
-            child: Text(cta,
-                style: const TextStyle(fontWeight: FontWeight.w800)),
+            child:
+                Text(cta, style: const TextStyle(fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -339,13 +334,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _busyBackup = true);
     try {
       final msg = await action(pass);
-      if (mounted) {
+      // Import returns '' on success (it shows its own result) —
+      // never show a blank snackbar.
+      if (mounted && msg.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(msg),
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 4)),
         );
+        _loadStats();
+      } else if (mounted) {
         _loadStats();
       }
     } finally {
@@ -378,8 +377,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
     if (ok == true) {
-      final msg =
-          await BackupService.instance.importFromPicker(pass);
+      final msg = await BackupService.instance.importFromPicker(pass);
       if (!mounted) return;
       // Reload everything after an import.
       await AppState.instance.init();
@@ -408,33 +406,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text('Why no contact works',
-                  style: TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.w800)),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
               const SizedBox(height: 4),
               const Text(
                   'Commonly shared self-care wisdom — not medical advice.',
-                  style: TextStyle(
-                      fontSize: 14.5, color: DayOneColors.muted)),
+                  style: TextStyle(fontSize: 14.5, color: DayOneColors.muted)),
               const SizedBox(height: 14),
               Expanded(
                 child: ListView.separated(
                   controller: ctrl,
                   itemCount: whyNoContactWorks.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: 10),
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (_, i) {
                     final item = whyNoContactWorks[i];
                     return Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(item['title']!,
                                 style: const TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w700)),
+                                    fontSize: 17, fontWeight: FontWeight.w700)),
                             const SizedBox(height: 6),
                             Text(item['body']!,
                                 style: const TextStyle(
@@ -468,18 +461,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('A gentle note',
-                style:
-                    TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
             const SizedBox(height: 10),
             const Text(disclaimerText,
                 style: TextStyle(
                     fontSize: 16, height: 1.6, color: DayOneColors.muted)),
             const SizedBox(height: 12),
-            Text('$crisisUs\n$crisisUk',
-                style: const TextStyle(
-                    fontSize: 15.5,
-                    height: 1.6,
-                    fontWeight: FontWeight.w600)),
+            Builder(builder: (ctx) {
+              final entry = resolveCrisisHelpline(
+                WidgetsBinding.instance.platformDispatcher.locale.countryCode,
+              );
+              // Tappable, like the SOS crisis card — someone reading
+              // this in a hard moment should be able to call directly.
+              return GestureDetector(
+                onTap: () => launchUrl(Uri(scheme: 'tel', path: entry['dial'])),
+                child: Text('${entry['prefix']}${entry['number']}',
+                    style: const TextStyle(
+                        fontSize: 15.5,
+                        height: 1.6,
+                        fontWeight: FontWeight.w600,
+                        color: DayOneColors.terracottaDeep,
+                        decoration: TextDecoration.underline)),
+              );
+            }),
           ],
         ),
       ),
@@ -495,10 +499,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             [AppState.instance, BillingService.instance.uiState]),
         builder: (context, _) {
           final app = AppState.instance;
-          final isPro =
-              BillingService.instance.uiState.value.isPro;
-          final name =
-              app.userName.isEmpty ? 'Friend' : app.userName;
+          final isPro = BillingService.instance.uiState.value.isPro;
+          final name = app.userName.isEmpty ? 'Friend' : app.userName;
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
             child: Column(
@@ -519,9 +521,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        name.isNotEmpty
-                            ? name[0].toUpperCase()
-                            : '?',
+                        name.isNotEmpty ? name[0].toUpperCase() : '?',
                         style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w800,
@@ -531,46 +531,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(name,
                               style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800)),
+                                  fontSize: 20, fontWeight: FontWeight.w800)),
                           Text(
                             isPro
                                 ? 'Day One Pro'
                                 : 'Healing since ${app.streakStartMs == null ? '—' : _fmtDate(app.streakStartMs!)}',
                             style: const TextStyle(
-                                fontSize: 14.5,
-                                color: DayOneColors.muted),
+                                fontSize: 14.5, color: DayOneColors.muted),
                           ),
                         ],
                       ),
                     ),
-                    TextButton(
-                        onPressed: _editName,
-                        child: const Text('Edit')),
+                    TextButton(onPressed: _editName, child: const Text('Edit')),
                   ],
                 ),
                 const SizedBox(height: 16),
                 // Stats
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 16, horizontal: 8),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
                     child: Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.spaceAround,
                       children: [
-                        _stat('${app.elapsedDays}', 'Current'),
-                        _stat('${app.longestDays}', 'Longest'),
-                        _stat(
-                            '${(_checkInRate * 100).round()}%',
-                            'Check-ins'),
-                        _stat('$_journalCount', 'Entries'),
-                        _stat('$_milestonesUnlocked', 'Milestones'),
+                        // Expanded + scale-down text: five stats share the
+                        // width evenly and long labels ("Milestones") shrink
+                        // slightly on small screens / large fonts instead of
+                        // overflowing.
+                        Expanded(
+                            child: _stat(
+                                '${streak_math.displayDay(app.elapsedDays)}',
+                                'Current')),
+                        Expanded(
+                            child: _stat(
+                                app.longestDays == 0
+                                    ? '0'
+                                    : '${app.longestDays + 1}',
+                                'Longest')),
+                        Expanded(
+                            child: _stat('${(_checkInRate * 100).round()}%',
+                                'Check-ins')),
+                        Expanded(child: _stat('$_journalCount', 'Entries')),
+                        Expanded(
+                            child: _stat('$_milestonesUnlocked', 'Milestones')),
                       ],
                     ),
                   ),
@@ -581,8 +587,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   GestureDetector(
                     onTap: () {
                       Navigator.of(context).push(
-                        FadeSlidePageRoute(
-                            child: const PaywallScreen()),
+                        FadeSlidePageRoute(child: const PaywallScreen()),
                       );
                     },
                     child: Card(
@@ -599,8 +604,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text('Day One Pro',
                                       style: TextStyle(
@@ -616,8 +620,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ],
                               ),
                             ),
-                            Icon(Icons.chevron_right,
-                                color: Colors.white),
+                            Icon(Icons.chevron_right, color: Colors.white),
                           ],
                         ),
                       ),
@@ -629,8 +632,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       padding: EdgeInsets.all(18),
                       child: Row(
                         children: [
-                          Icon(Icons.verified,
-                              color: DayOneColors.gold),
+                          Icon(Icons.verified, color: DayOneColors.gold),
                           SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -653,8 +655,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _row('Start date', _fmtDate(app.streakStartMs),
                     onTap: _editStartDate),
                 _row('Notifications', app.notificationsOn ? 'On' : 'Off',
-                    onTap: () => app.setNotificationsOn(
-                        !app.notificationsOn)),
+                    onTap: () => app.setNotificationsOn(!app.notificationsOn)),
                 _row('Widget theme', _widgetThemeLabel,
                     onTap: () => _widgetThemeSheet(isPro)),
                 _row('Share Day One', 'Tell a friend who needs this',
@@ -668,30 +669,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontWeight: FontWeight.w800,
                         color: DayOneColors.muted)),
                 const SizedBox(height: 8),
-                _row(
-                    'Export backup',
-                    _busyBackup
-                        ? 'Working…'
-                        : 'Encrypted file you keep',
+                _row('Export backup',
+                    _busyBackup ? 'Working…' : 'Encrypted file you keep',
                     onTap: _busyBackup
                         ? null
                         : () => _askPassphrase(
                               title: 'Export backup',
                               cta: 'Export',
                               action: (pass) async {
-                                final ok =
-                                    await BackupService.instance
-                                        .exportWithShareSheet(pass);
+                                final ok = await BackupService.instance
+                                    .exportWithShareSheet(pass);
                                 return ok
                                     ? 'Backup shared. Keep it somewhere safe.'
                                     : 'Export cancelled.';
                               },
                             )),
-                _row(
-                    'Import backup',
-                    _busyBackup
-                        ? 'Working…'
-                        : 'Restore from a backup file',
+                _row('Import backup',
+                    _busyBackup ? 'Working…' : 'Restore from a backup file',
                     onTap: _busyBackup
                         ? null
                         : () => _askPassphrase(
@@ -710,17 +704,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: DayOneColors.muted)),
                 const SizedBox(height: 8),
                 _row('Why no contact works', '', onTap: _whySheet),
-                _row('A gentle note (disclaimer)', '',
-                    onTap: _disclaimerSheet),
+                _row('A gentle note (disclaimer)', '', onTap: _disclaimerSheet),
                 const SizedBox(height: 20),
                 const Center(
                   child: Text(
                     'Day One is a self-care companion,\nnot a therapist.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                        fontSize: 11.5,
-                        color: DayOneColors.faint,
-                        height: 1.5),
+                        fontSize: 11.5, color: DayOneColors.faint, height: 1.5),
                   ),
                 ),
               ],
@@ -733,14 +724,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _stat(String value, String label) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(value,
-            style:
-                const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(value,
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        ),
         const SizedBox(height: 2),
-        Text(label,
-            style: const TextStyle(
-                fontSize: 10, color: DayOneColors.muted)),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 10, color: DayOneColors.muted)),
+        ),
       ],
     );
   }
@@ -753,8 +751,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           borderRadius: BorderRadius.circular(18),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
                 Expanded(
@@ -763,13 +760,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       Text(title,
                           style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600)),
+                              fontSize: 16, fontWeight: FontWeight.w600)),
                       if (sub.isNotEmpty)
                         Text(sub,
                             style: const TextStyle(
-                                fontSize: 14,
-                                color: DayOneColors.muted)),
+                                fontSize: 14, color: DayOneColors.muted)),
                     ],
                   ),
                 ),
@@ -787,8 +782,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (ms == null) return '—';
     final d = DateTime.fromMillisecondsSinceEpoch(ms);
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }

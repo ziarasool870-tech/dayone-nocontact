@@ -23,7 +23,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   DateTime _startDate = DateTime.now();
   bool _forSelf = true;
   // Month currently shown in the start-date calendar grid.
-  late DateTime _shownMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  late DateTime _shownMonth =
+      DateTime(DateTime.now().year, DateTime.now().month);
 
   void _next() {
     if (_page < 2) {
@@ -73,8 +74,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: PressScale(
                   child: ElevatedButton(
                     onPressed: _next,
-                    child:
-                        Text(_page == 2 ? 'Enter Day One' : 'Continue'),
+                    child: Text(_page == 2 ? 'Enter Day One' : 'Continue'),
                   ),
                 ),
               ),
@@ -136,8 +136,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const Text(
             'Your breakup recovery companion.\nOne day at a time.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-                fontSize: 17, height: 1.5, color: DayOneColors.muted),
+            style:
+                TextStyle(fontSize: 17, height: 1.5, color: DayOneColors.muted),
           ),
           const SizedBox(height: 18),
           const Text('Free forever where it matters.',
@@ -203,12 +203,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   static const _monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December'
   ];
 
   /// Full-month calendar grid for picking the streak start day.
-  /// Back to Jan 2024, forward to the current month. Future days disabled.
+  /// Back to Jan 2020 (matches Profile's start-date picker),
+  /// forward to the current month. Future days disabled.
   Widget _monthGrid() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -216,7 +227,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final m = _shownMonth.month;
     final daysInMonth = DateTime(y, m + 1, 0).day;
     final leadBlanks = DateTime(y, m, 1).weekday - 1; // Monday-first
-    final minMonth = DateTime(2024, 1);
+    final minMonth = DateTime(2020, 1);
     final maxMonth = DateTime(now.year, now.month);
     final canGoBack = DateTime(y, m).isAfter(minMonth);
     final canGoForward = DateTime(y, m).isBefore(maxMonth);
@@ -232,22 +243,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final disabled = date.isAfter(today);
       cells.add(
         GestureDetector(
-          onTap: disabled
-              ? null
-              : () => setState(() => _startDate = date),
+          onTap: disabled ? null : () => setState(() => _startDate = date),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             height: 40,
             decoration: BoxDecoration(
-              color: selected
-                  ? DayOneColors.terracotta
-                  : Colors.transparent,
+              color: selected ? DayOneColors.terracotta : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
               boxShadow: selected
                   ? [
                       BoxShadow(
-                        color: DayOneColors.terracotta
-                            .withValues(alpha: 0.45),
+                        color: DayOneColors.terracotta.withValues(alpha: 0.45),
                         blurRadius: 12,
                         spreadRadius: 1,
                         offset: const Offset(0, 3),
@@ -266,8 +272,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               fontWeight: FontWeight.w700,
                               color: Colors.white)),
                       const SizedBox(width: 3),
-                      const Icon(Icons.favorite,
-                          size: 10, color: Colors.white),
+                      const Icon(Icons.favorite, size: 10, color: Colors.white),
                     ],
                   )
                 : Column(
@@ -303,8 +308,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               children: [
                 IconButton(
                   onPressed: canGoBack
-                      ? () => setState(() =>
-                          _shownMonth = DateTime(y, m - 1))
+                      ? () => setState(() => _shownMonth = DateTime(y, m - 1))
                       : null,
                   icon: const Icon(Icons.chevron_left),
                   color: DayOneColors.terracotta,
@@ -317,8 +321,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         color: DayOneColors.ink)),
                 IconButton(
                   onPressed: canGoForward
-                      ? () => setState(() =>
-                          _shownMonth = DateTime(y, m + 1))
+                      ? () => setState(() => _shownMonth = DateTime(y, m + 1))
                       : null,
                   icon: const Icon(Icons.chevron_right),
                   color: DayOneColors.terracotta,
@@ -356,79 +359,93 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // ------------------------------------------------------------ page 3
 
   Widget _setupPage() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 28),
-          const Text('STEP 2 OF 2',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 2.5,
-                  color: DayOneColors.terracotta)),
-          const SizedBox(height: 10),
-          const Text('Who is this\njourney for?',
-              style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
-                  color: DayOneColors.ink,
-                  height: 1.15)),
-          const SizedBox(height: 22),
-          Row(
-            children: [
-              Expanded(child: _choiceCard(true, 'Me', "I'm healing")),
-              const SizedBox(width: 12),
-              Expanded(
-                  child:
-                      _choiceCard(false, 'A friend', 'Supporting them')),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 6),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+    // Scroll-safe on short screens / large fonts: spacers distribute
+    // extra room on tall phones, content scrolls on small ones.
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: IntrinsicHeight(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 28),
+                const Text('STEP 2 OF 2',
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2.5,
+                        color: DayOneColors.terracotta)),
+                const SizedBox(height: 10),
+                const Text('Who is this\njourney for?',
+                    style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                        color: DayOneColors.ink,
+                        height: 1.15)),
+                const SizedBox(height: 22),
+                Row(
+                  children: [
+                    Expanded(child: _choiceCard(true, 'Me', "I'm healing")),
+                    const SizedBox(width: 12),
+                    Expanded(
+                        child:
+                            _choiceCard(false, 'A friend', 'Supporting them')),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Card(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: Row(
                       children: [
-                        Text('Daily check-in reminders',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: DayOneColors.ink)),
-                        Text('One gentle nudge a day',
-                            style: TextStyle(
-                                fontSize: 14,
-                                color: DayOneColors.muted)),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Daily check-in reminders',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: DayOneColors.ink)),
+                              Text('One gentle nudge a day',
+                                  style: TextStyle(
+                                      fontSize: 14, color: DayOneColors.muted)),
+                            ],
+                          ),
+                        ),
+                        // ListenableBuilder so the toggle flips visually the
+                        // moment it's tapped (this screen doesn't otherwise
+                        // rebuild on AppState changes).
+                        ListenableBuilder(
+                          listenable: AppState.instance,
+                          builder: (context, _) => Switch(
+                            value: AppState.instance.notificationsOn,
+                            activeTrackColor: DayOneColors.sage,
+                            onChanged: (v) =>
+                                AppState.instance.setNotificationsOn(v),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  Switch(
-                    value: AppState.instance.notificationsOn,
-                    activeTrackColor: DayOneColors.sage,
-                    onChanged: (v) =>
-                        AppState.instance.setNotificationsOn(v),
+                ),
+                const Spacer(),
+                Center(
+                  child: TextButton(
+                    onPressed: _finish,
+                    child: const Text('skip for now',
+                        style: TextStyle(color: DayOneColors.muted)),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 8),
+              ],
             ),
           ),
-          const Spacer(),
-          Center(
-            child: TextButton(
-              onPressed: _finish,
-              child: const Text('skip for now',
-                  style: TextStyle(color: DayOneColors.muted)),
-            ),
-          ),
-          const SizedBox(height: 8),
-        ],
+        ),
       ),
     );
   }
@@ -444,9 +461,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: selected
-                ? DayOneColors.terracotta
-                : DayOneColors.cardBorder,
+            color: selected ? DayOneColors.terracotta : DayOneColors.cardBorder,
             width: selected ? 2 : 1,
           ),
         ),
@@ -461,8 +476,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         : DayOneColors.muted)),
             const SizedBox(height: 4),
             Text(sub,
-                style: const TextStyle(
-                    fontSize: 11.5, color: DayOneColors.muted)),
+                style:
+                    const TextStyle(fontSize: 11.5, color: DayOneColors.muted)),
           ],
         ),
       ),
@@ -506,8 +521,7 @@ class _BreathingAppIconState extends State<BreathingAppIcon>
     return AnimatedBuilder(
       animation: _ctrl,
       builder: (context, child) {
-        final scale =
-            1.0 + 0.07 * Curves.easeInOut.transform(_ctrl.value);
+        final scale = 1.0 + 0.07 * Curves.easeInOut.transform(_ctrl.value);
         return Transform.scale(scale: scale, child: child);
       },
       child: Container(

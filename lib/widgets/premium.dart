@@ -33,13 +33,13 @@ class _TickingCounterState extends State<TickingCounter> {
   @override
   void initState() {
     super.initState();
-    _parts = elapsedParts(
-        widget.startMs, DateTime.now().millisecondsSinceEpoch);
+    _parts =
+        elapsedParts(widget.startMs, DateTime.now().millisecondsSinceEpoch);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       setState(() {
-        _parts = elapsedParts(
-            widget.startMs, DateTime.now().millisecondsSinceEpoch);
+        _parts =
+            elapsedParts(widget.startMs, DateTime.now().millisecondsSinceEpoch);
       });
     });
   }
@@ -48,8 +48,8 @@ class _TickingCounterState extends State<TickingCounter> {
   void didUpdateWidget(TickingCounter oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.startMs != widget.startMs) {
-      _parts = elapsedParts(
-          widget.startMs, DateTime.now().millisecondsSinceEpoch);
+      _parts =
+          elapsedParts(widget.startMs, DateTime.now().millisecondsSinceEpoch);
     }
   }
 
@@ -76,42 +76,48 @@ class _TickingCounterState extends State<TickingCounter> {
           ),
         ),
         const SizedBox(height: 6),
-        Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-          decoration: BoxDecoration(
-            color: DayOneColors.terracottaSoft,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _unit(_parts.days, 'd'),
-              _sep(),
-              _unit(_parts.hours, 'h'),
-              _sep(),
-              _unit(_parts.minutes, 'm'),
-              _sep(),
-              // Seconds get the animated treatment.
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 350),
-                transitionBuilder: (child, anim) => SlideTransition(
-                  position: Tween<Offset>(
-                          begin: const Offset(0, 0.6), end: Offset.zero)
-                      .animate(CurvedAnimation(
-                          parent: anim, curve: Curves.easeOut)),
-                  child: FadeTransition(opacity: anim, child: child),
+        // The pill never wraps or overflows: on very long streaks with
+        // large system fonts the whole pill scales *down* slightly
+        // instead of breaking the layout. Invisible in normal cases.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            decoration: BoxDecoration(
+              color: DayOneColors.terracottaSoft,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _unit(displayDay(_parts.days), 'd'),
+                _sep(),
+                _unit(_parts.hours, 'h'),
+                _sep(),
+                _unit(_parts.minutes, 'm'),
+                _sep(),
+                // Seconds get the animated treatment.
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 350),
+                  transitionBuilder: (child, anim) => SlideTransition(
+                    position: Tween<Offset>(
+                            begin: const Offset(0, 0.6), end: Offset.zero)
+                        .animate(CurvedAnimation(
+                            parent: anim, curve: Curves.easeOut)),
+                    child: FadeTransition(opacity: anim, child: child),
+                  ),
+                  child:
+                      _unit(_parts.seconds, 's', key: ValueKey(_parts.seconds)),
                 ),
-                child: _unit(_parts.seconds, 's',
-                    key: ValueKey(_parts.seconds)),
-              ),
-              const SizedBox(width: 4),
-              const Text('strong',
-                  style: TextStyle(
-                      color: DayOneColors.terracottaDeep,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700)),
-            ],
+                const SizedBox(width: 4),
+                const Text('strong',
+                    style: TextStyle(
+                        color: DayOneColors.terracottaDeep,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700)),
+              ],
+            ),
           ),
         ),
       ],
@@ -131,8 +137,7 @@ class _TickingCounterState extends State<TickingCounter> {
   Widget _sep() => const Padding(
         padding: EdgeInsets.symmetric(horizontal: 5),
         child: Text('·',
-            style: TextStyle(
-                color: DayOneColors.terracottaDeep, fontSize: 15)),
+            style: TextStyle(color: DayOneColors.terracottaDeep, fontSize: 15)),
       );
 }
 
@@ -153,9 +158,9 @@ class _BreathCircleState extends State<BreathCircle>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(seconds: 12))
-      ..repeat();
+    _ctrl =
+        AnimationController(vsync: this, duration: const Duration(seconds: 12))
+          ..repeat();
   }
 
   @override
@@ -198,8 +203,7 @@ class _BreathCircleState extends State<BreathCircle>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: DayOneColors.terracotta
-                          .withValues(alpha: 0.25),
+                      color: DayOneColors.terracotta.withValues(alpha: 0.25),
                       blurRadius: 32 * scale,
                       spreadRadius: 4,
                     ),
@@ -248,8 +252,7 @@ class MilestoneCelebration extends StatefulWidget {
   }
 
   @override
-  State<MilestoneCelebration> createState() =>
-      _MilestoneCelebrationState();
+  State<MilestoneCelebration> createState() => _MilestoneCelebrationState();
 }
 
 class _MilestoneCelebrationState extends State<MilestoneCelebration>
@@ -285,8 +288,7 @@ class _MilestoneCelebrationState extends State<MilestoneCelebration>
           ),
           Center(
             child: ScaleTransition(
-              scale: CurvedAnimation(
-                  parent: _ctrl, curve: Curves.elasticOut),
+              scale: CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut),
               child: FadeTransition(
                 opacity: _ctrl,
                 child: Container(
@@ -310,16 +312,13 @@ class _MilestoneCelebrationState extends State<MilestoneCelebration>
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: LinearGradient(
-                            colors: [
-                              DayOneColors.gold,
-                              Color(0xFFE8C89F)
-                            ],
+                            colors: [DayOneColors.gold, Color(0xFFE8C89F)],
                           ),
                         ),
                         alignment: Alignment.center,
                         child: const Text('★',
-                            style: TextStyle(
-                                fontSize: 34, color: Colors.white)),
+                            style:
+                                TextStyle(fontSize: 34, color: Colors.white)),
                       ),
                       const SizedBox(height: 16),
                       Text('Day ${widget.day} unlocked!',
@@ -340,8 +339,7 @@ class _MilestoneCelebrationState extends State<MilestoneCelebration>
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () =>
-                              Navigator.of(context).pop(),
+                          onPressed: () => Navigator.of(context).pop(),
                           child: const Text('Keep going'),
                         ),
                       ),
@@ -376,7 +374,8 @@ class _ConfettiPainter extends CustomPainter {
       final speed = 0.25 + _rand.nextDouble() * 0.6;
       final dist = progress * speed * size.height * 0.55;
       final x = size.width / 2 + math.cos(angle) * dist;
-      final y = size.height * 0.38 + math.sin(angle) * dist * 0.8 +
+      final y = size.height * 0.38 +
+          math.sin(angle) * dist * 0.8 +
           progress * progress * 140; // gravity
       final paint = Paint()
         ..color = colors[i % colors.length]
@@ -386,16 +385,14 @@ class _ConfettiPainter extends CustomPainter {
       canvas.rotate(angle + progress * 6);
       canvas.drawRRect(
           RRect.fromRectAndRadius(
-              const Rect.fromLTWH(-4, -2.5, 8, 5),
-              const Radius.circular(2)),
+              const Rect.fromLTWH(-4, -2.5, 8, 5), const Radius.circular(2)),
           paint);
       canvas.restore();
     }
   }
 
   @override
-  bool shouldRepaint(_ConfettiPainter old) =>
-      old.progress != progress;
+  bool shouldRepaint(_ConfettiPainter old) => old.progress != progress;
 }
 
 /// Premium page transition: gentle fade + rise.
@@ -403,16 +400,14 @@ class FadeSlidePageRoute<T> extends PageRouteBuilder<T> {
   FadeSlidePageRoute({required Widget child})
       : super(
           transitionDuration: const Duration(milliseconds: 260),
-          reverseTransitionDuration:
-              const Duration(milliseconds: 200),
+          reverseTransitionDuration: const Duration(milliseconds: 200),
           pageBuilder: (_, __, ___) => child,
           transitionsBuilder: (_, anim, __, child) {
-            final fade = CurvedAnimation(
-                parent: anim, curve: Curves.easeOut);
+            final fade = CurvedAnimation(parent: anim, curve: Curves.easeOut);
             final slide = Tween<Offset>(
                     begin: const Offset(0, 0.06), end: Offset.zero)
-                .animate(CurvedAnimation(
-                    parent: anim, curve: Curves.easeOutCubic));
+                .animate(
+                    CurvedAnimation(parent: anim, curve: Curves.easeOutCubic));
             return FadeTransition(
               opacity: fade,
               child: SlideTransition(position: slide, child: child),
@@ -437,15 +432,12 @@ class SosFab extends StatelessWidget {
           backgroundColor: DayOneColors.sos,
           foregroundColor: Colors.white,
           minimumSize: const Size(120, 48),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
           elevation: 6,
-          shadowColor:
-              DayOneColors.sos.withValues(alpha: 0.4),
+          shadowColor: DayOneColors.sos.withValues(alpha: 0.4),
           textStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2),
+              fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1.2),
         ),
         child: const Text('SOS'),
       ),
@@ -502,9 +494,8 @@ class _HeartPopBodyState extends State<_HeartPopBody>
         animation: _ctrl,
         builder: (_, __) {
           final t = _ctrl.value;
-          final scale = t < 0.45
-              ? Curves.elasticOut.transform(t / 0.45) * 1.0
-              : 1.0;
+          final scale =
+              t < 0.45 ? Curves.elasticOut.transform(t / 0.45) * 1.0 : 1.0;
           final opacity = t < 0.7 ? 1.0 : 1.0 - (t - 0.7) / 0.3;
           return Opacity(
             opacity: opacity.clamp(0.0, 1.0),
@@ -518,8 +509,7 @@ class _HeartPopBodyState extends State<_HeartPopBody>
                   color: DayOneColors.terracotta,
                   boxShadow: [
                     BoxShadow(
-                      color: DayOneColors.terracotta
-                          .withValues(alpha: 0.4),
+                      color: DayOneColors.terracotta.withValues(alpha: 0.4),
                       blurRadius: 32,
                       spreadRadius: 4,
                     ),
@@ -527,8 +517,7 @@ class _HeartPopBodyState extends State<_HeartPopBody>
                 ),
                 alignment: Alignment.center,
                 child: const Text('♥',
-                    style:
-                        TextStyle(fontSize: 44, color: Colors.white)),
+                    style: TextStyle(fontSize: 44, color: Colors.white)),
               ),
             ),
           );

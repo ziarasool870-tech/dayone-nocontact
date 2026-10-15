@@ -54,7 +54,7 @@ class DayOneTheme {
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
-          fontFamily: 'Poppins',
+          fontFamily: 'Lora',
           color: DayOneColors.ink,
           fontSize: 22,
           fontWeight: FontWeight.w800,
@@ -84,7 +84,7 @@ class DayOneTheme {
             fontSize: 11,
             fontWeight: FontWeight.w700,
             letterSpacing: 2.0),
-      ).apply(fontFamily: 'Poppins'),
+      ).apply(fontFamily: 'Lora'),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: DayOneColors.terracotta,
@@ -93,7 +93,7 @@ class DayOneTheme {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           textStyle: const TextStyle(
-              fontFamily: 'Poppins', fontSize: 17, fontWeight: FontWeight.w700),
+              fontFamily: 'Lora', fontSize: 17, fontWeight: FontWeight.w700),
           elevation: 0,
         ),
       ),
@@ -105,7 +105,7 @@ class DayOneTheme {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           textStyle: const TextStyle(
-              fontFamily: 'Poppins', fontSize: 17, fontWeight: FontWeight.w700),
+              fontFamily: 'Lora', fontSize: 17, fontWeight: FontWeight.w700),
         ),
       ),
       cardTheme: CardThemeData(
@@ -143,9 +143,9 @@ class DayOneTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 8,
         selectedLabelStyle: TextStyle(
-            fontFamily: 'Poppins', fontSize: 11, fontWeight: FontWeight.w700),
+            fontFamily: 'Lora', fontSize: 11, fontWeight: FontWeight.w700),
         unselectedLabelStyle: TextStyle(
-            fontFamily: 'Poppins', fontSize: 11, fontWeight: FontWeight.w600),
+            fontFamily: 'Lora', fontSize: 11, fontWeight: FontWeight.w600),
       ),
     );
   }

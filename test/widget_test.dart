@@ -90,12 +90,13 @@ void main() {
           DateTime.now().millisecondsSinceEpoch;
     });
 
-    testWidgets('renders hero streak card at Day 0', (tester) async {
+    testWidgets('renders hero streak card at Day 1', (tester) async {
       await tester.pumpWidget(_wrap(const HomeScreen()));
       await tester.pump();
 
-      // Brand language: "Day 0" hero label from TickingCounter.
-      expect(find.text('Day 0'), findsOneWidget);
+      // v4 brand language: "Day 1" hero label from TickingCounter
+      // (the start day itself counts as Day 1).
+      expect(find.text('Day 1'), findsOneWidget);
       // Daily quote card is present.
       expect(find.text('“'), findsOneWidget);
     });

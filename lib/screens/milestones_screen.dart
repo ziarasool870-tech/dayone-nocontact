@@ -224,7 +224,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
               unlocked
                   ? 'Unlocked · tap to share'
                   : isNext
-                      ? '${day - AppState.instance.elapsedDays} days to go'
+                      ? '${day - streak_math.displayDay(AppState.instance.elapsedDays)} days to go'
                       : 'Locked',
               textAlign: TextAlign.center,
               style: TextStyle(

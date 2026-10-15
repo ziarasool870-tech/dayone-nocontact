@@ -10,6 +10,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'share_service.dart';
+
 class NotificationService {
   NotificationService._();
 
@@ -48,8 +50,8 @@ class NotificationService {
     await init();
     await _plugin.cancel(_checkInId);
     final now = tz.TZDateTime.now(tz.local);
-    var scheduled = tz.TZDateTime(
-        tz.local, now.year, now.month, now.day, hour, minute);
+    var scheduled =
+        tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
     if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }
@@ -77,10 +79,13 @@ class NotificationService {
   /// Immediate congratulations when a milestone unlocks.
   Future<void> notifyMilestone(int day) async {
     await init();
+    // Per-milestone copy — Day 7 must never claim "one month".
+    final body =
+        '${milestoneMessages[day] ?? 'Keep choosing yourself.'} Tap to see your milestone card.';
     await _plugin.show(
       2000 + day,
       'Day $day — you did it!',
-      'One month of choosing yourself. Share your milestone card.',
+      body,
       const NotificationDetails(
         android: AndroidNotificationDetails(
           _channelId,

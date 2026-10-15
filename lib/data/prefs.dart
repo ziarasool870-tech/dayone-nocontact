@@ -5,6 +5,8 @@
 /// stay stable. See android widget code for the matching reader.
 library;
 
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -37,6 +39,8 @@ class PrefsService {
   static const kIsPro = 'dayone.is_pro';
   static const kProProductId = 'dayone.pro_product_id';
   static const kMilestonesSeen = 'dayone.milestones_seen';
+  static const kCustomReasons = 'dayone.custom_reasons';
+  static const kHiddenDefaultReasons = 'dayone.hidden_default_reasons';
 
   bool get onboardingDone => _prefs.getBool(kOnboardingDone) ?? false;
   Future<void> setOnboardingDone(bool v) =>
@@ -91,6 +95,42 @@ class PrefsService {
         kMilestonesSeen, seen.map((e) => '$e').join(','));
   }
 
+  /// The user's own SOS reasons, shown above the defaults.
+  List<String> get customReasons {
+    final raw = _prefs.getString(kCustomReasons);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) {
+        return decoded.whereType<String>().toList();
+      }
+    } catch (_) {
+      // Corrupt payload: start fresh rather than crash.
+    }
+    return [];
+  }
+
+  Future<void> setCustomReasons(List<String> reasons) =>
+      _prefs.setString(kCustomReasons, jsonEncode(reasons));
+
+  /// Indices into [defaultReasons] the user chose to hide.
+  Set<int> get hiddenDefaultReasons {
+    final raw = _prefs.getString(kHiddenDefaultReasons);
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) {
+        return decoded.whereType<num>().map((e) => e.toInt()).toSet();
+      }
+    } catch (_) {
+      // Corrupt payload: start fresh rather than crash.
+    }
+    return {};
+  }
+
+  Future<void> setHiddenDefaultReasons(Set<int> indices) =>
+      _prefs.setString(kHiddenDefaultReasons, jsonEncode(indices.toList()));
+
   /// All settings as a plain map for the encrypted export feature.
   Map<String, Object?> exportSettings() {
     final out = <String, Object?>{};
@@ -106,6 +146,8 @@ class PrefsService {
       kIsPro,
       kProProductId,
       kMilestonesSeen,
+      kCustomReasons,
+      kHiddenDefaultReasons,
     ]) {
       out[k] = _prefs.get(k);
     }

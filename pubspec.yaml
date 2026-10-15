@@ -1,7 +1,7 @@
 name: day_one_nocontact
 description: "Day One: No Contact — breakup recovery companion. Streak tracking, journaling, SOS support, milestone cards."
 publish_to: "none"
-version: 1.0.2+3
+version: 1.0.3+4
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
@@ -50,15 +50,13 @@ flutter:
     - assets/icon/app_icon.png
 
   fonts:
-    - family: Poppins
+    - family: Lora
       fonts:
-        - asset: assets/fonts/poppins/Poppins-Regular.ttf
+        - asset: assets/fonts/lora/Lora.ttf
           weight: 400
-        - asset: assets/fonts/poppins/Poppins-Medium.ttf
+        - asset: assets/fonts/lora/Lora-Medium.ttf
           weight: 500
-        - asset: assets/fonts/poppins/Poppins-SemiBold.ttf
+        - asset: assets/fonts/lora/Lora-SemiBold.ttf
           weight: 600
-        - asset: assets/fonts/poppins/Poppins-Bold.ttf
+        - asset: assets/fonts/lora/Lora-Bold.ttf
           weight: 700
-        - asset: assets/fonts/poppins/Poppins-ExtraBold.ttf
-          weight: 800

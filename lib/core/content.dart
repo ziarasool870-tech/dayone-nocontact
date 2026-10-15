@@ -33,7 +33,7 @@ const List<String> healingQuotes = [
   "You're not behind. You're becoming.",
   "A clean break heals faster than a slow bleed.",
   "Your future self is thanking you right now.",
-  "Strength isn't never falling. It's restarting at Day 0 without shame.",
+  "Strength isn't never falling. It's restarting at Day 1 without shame.",
   "One day, you'll be grateful you didn't send that text.",
 ];
 
@@ -88,15 +88,48 @@ const String disclaimerText =
     "professional support. If you're struggling, please reach out to someone "
     "you trust — or a crisis line below.";
 
-const String crisisUs = "US: call or text 988";
-const String crisisUk = "UK: Samaritans 116 123";
+/// Crisis helplines by ISO country code — premium markets only.
+/// `prefix` = muted lead-in text, `number` = highlighted tappable number,
+/// `dial` = digits-only tel: URI path. All numbers are domestic-dial: they
+/// work as-is when called from inside that country.
+/// Researched Oct 15, 2026 — see crisis-helplines.md.
+const Map<String, Map<String, String>> crisisHelplines = {
+  'US': {'prefix': 'US: call or text ', 'number': '988', 'dial': '988'},
+  'GB': {'prefix': 'UK: Samaritans ', 'number': '116 123', 'dial': '116123'},
+  'CA': {'prefix': 'Canada: call or text ', 'number': '9-8-8', 'dial': '988'},
+  'AU': {
+    'prefix': 'Australia: Lifeline ',
+    'number': '13 11 14',
+    'dial': '131114'
+  },
+  'NZ': {
+    'prefix': 'New Zealand: call or text ',
+    'number': '1737',
+    'dial': '1737'
+  },
+  'IE': {
+    'prefix': 'Ireland: Samaritans ',
+    'number': '116 123',
+    'dial': '116123'
+  },
+  'SG': {'prefix': 'Singapore: SOS ', 'number': '1767', 'dial': '1767'},
+};
+
+/// International directory covering every other country.
+const String crisisFallbackUrl = 'https://findahelpline.com';
+
+/// Picks the crisis helpline matching the device's country.
+/// Falls back to the US entry when the country isn't covered.
+Map<String, String> resolveCrisisHelpline(String? countryCode) {
+  final code = countryCode?.toUpperCase();
+  return crisisHelplines[code] ?? crisisHelplines['US']!;
+}
 
 /// Milestone days for unlock logic. Single source of truth.
 const List<int> milestoneDays = [7, 14, 30, 60, 90];
 
 /// Relapse copy — shame-free by design.
 const String relapseTitle = "It's okay.";
-const String relapseBody =
-    "Most people restart twice before it sticks. "
+const String relapseBody = "Many people restart before it sticks. "
     "Your longest streak and every journal entry stay with you — "
-    "only the counter starts fresh. Day 0 again. You've got this.";
+    "only the counter starts fresh. Day 1 again. You've got this.";

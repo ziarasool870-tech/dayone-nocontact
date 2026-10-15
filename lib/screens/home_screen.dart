@@ -32,8 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadCheckIn() async {
-    final row = await DayOneDatabase.instance
-        .checkInFor(AppState.todayKey());
+    final row = await DayOneDatabase.instance.checkInFor(AppState.todayKey());
     if (mounted && row != null) {
       setState(() {
         _checkedInHeld = (row['held'] as num?)?.toInt() == 1;
@@ -91,8 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(relapseTitle,
-                style: Theme.of(ctx).textTheme.headlineMedium),
+            Text(relapseTitle, style: Theme.of(ctx).textTheme.headlineMedium),
             const SizedBox(height: 10),
             Text(relapseBody,
                 style: const TextStyle(
@@ -107,14 +105,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text(
-                            'Day 0 again. Your history stays with you.'),
+                        content:
+                            Text('Day 1 again. Your history stays with you.'),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
                   }
                 },
-                child: const Text('Restart at Day 0'),
+                child: const Text('Restart at Day 1'),
               ),
             ),
             const SizedBox(height: 8),
@@ -140,13 +138,13 @@ class _HomeScreenState extends State<HomeScreen> {
         final app = AppState.instance;
         final startMs = app.streakStartMs;
         if (startMs == null) {
-          return const Center(child: Text('Setting up your Day 0…'));
+          return const Center(child: Text('Setting up your Day One…'));
         }
         final days = app.elapsedDays;
         final next = streak_math.nextMilestone(days);
         final progress = streak_math.progressToNext(days);
-        final quote =
-            healingQuotes[streak_math.quoteIndexFor(DateTime.now(), healingQuotes.length)];
+        final quote = healingQuotes[
+            streak_math.quoteIndexFor(DateTime.now(), healingQuotes.length)];
 
         return RefreshIndicator(
           onRefresh: () async {
@@ -155,8 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding:
-                const EdgeInsets.fromLTRB(20, 8, 20, 120),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -198,8 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         const Text('Did you hold no contact today?',
                             style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w700)),
+                                fontSize: 17, fontWeight: FontWeight.w700)),
                         const SizedBox(height: 4),
                         Text(
                           _checkedInHeld == null
@@ -208,21 +204,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ? 'Logged: held strong today.'
                                   : 'Logged: slipped today. It happens.',
                           style: const TextStyle(
-                              fontSize: 14.5,
-                              color: DayOneColors.muted),
+                              fontSize: 14.5, color: DayOneColors.muted),
                         ),
                         const SizedBox(height: 12),
                         Row(
                           children: [
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: _checkingIn
-                                    ? null
-                                    : () => _checkIn(true),
+                                onPressed:
+                                    _checkingIn ? null : () => _checkIn(true),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: DayOneColors.sage,
-                                  minimumSize:
-                                      const Size.fromHeight(48),
+                                  minimumSize: const Size.fromHeight(48),
                                 ),
                                 child: const Text('Yes, held strong'),
                               ),
@@ -230,12 +223,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: OutlinedButton(
-                                onPressed: _checkingIn
-                                    ? null
-                                    : () => _checkIn(false),
+                                onPressed:
+                                    _checkingIn ? null : () => _checkIn(false),
                                 style: OutlinedButton.styleFrom(
-                                  minimumSize:
-                                      const Size.fromHeight(48),
+                                  minimumSize: const Size.fromHeight(48),
                                 ),
                                 child: const Text('I slipped'),
                               ),
@@ -259,8 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               style: TextStyle(
                                   fontSize: 14,
                                   color: DayOneColors.muted,
-                                  decoration:
-                                      TextDecoration.underline),
+                                  decoration: TextDecoration.underline),
                             ),
                           ),
                         ),
@@ -277,24 +267,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               next == null
                                   ? 'All milestones unlocked'
                                   : 'Next milestone · Day $next',
                               style: const TextStyle(
-                                  fontSize: 15.5,
-                                  fontWeight: FontWeight.w700),
+                                  fontSize: 15.5, fontWeight: FontWeight.w700),
                             ),
                             if (next != null)
-                              Text('${next - days} to go',
+                              Text(
+                                  '${next - streak_math.displayDay(days)} to go',
                                   style: const TextStyle(
                                       fontSize: 14.5,
                                       fontWeight: FontWeight.w700,
-                                      color:
-                                          DayOneColors.terracotta)),
+                                      color: DayOneColors.terracotta)),
                           ],
                         ),
                         const SizedBox(height: 10),
@@ -302,18 +290,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(6),
                           child: TweenAnimationBuilder<double>(
                             tween: Tween(begin: 0, end: progress),
-                            duration:
-                                const Duration(milliseconds: 800),
+                            duration: const Duration(milliseconds: 800),
                             curve: Curves.easeOutCubic,
-                            builder: (_, v, __) =>
-                                LinearProgressIndicator(
+                            builder: (_, v, __) => LinearProgressIndicator(
                               value: v,
                               minHeight: 8,
-                              backgroundColor:
-                                  const Color(0xFFF1EAE2),
-                              valueColor:
-                                  const AlwaysStoppedAnimation(
-                                      DayOneColors.terracotta),
+                              backgroundColor: const Color(0xFFF1EAE2),
+                              valueColor: const AlwaysStoppedAnimation(
+                                  DayOneColors.terracotta),
                             ),
                           ),
                         ),
@@ -338,7 +322,18 @@ class _HomeScreenState extends State<HomeScreen> {
         final selected = _mood == i;
         return Expanded(
           child: GestureDetector(
-            onTap: () => setState(() => _mood = i),
+            onTap: () {
+              setState(() => _mood = i);
+              // Already checked in today? Keep the saved mood in sync
+              // instead of silently dropping the change on reload.
+              if (_checkedInHeld != null) {
+                DayOneDatabase.instance.upsertCheckIn(
+                  AppState.todayKey(),
+                  held: _checkedInHeld!,
+                  mood: i,
+                );
+              }
+            },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               margin: const EdgeInsets.symmetric(horizontal: 3),
@@ -349,9 +344,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     : const Color(0xFFF4F1EC),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: selected
-                      ? DayOneColors.terracotta
-                      : Colors.transparent,
+                  color:
+                      selected ? DayOneColors.terracotta : Colors.transparent,
                 ),
               ),
               alignment: Alignment.center,
@@ -375,8 +369,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, snap) {
         final byDate = <String, bool>{};
         for (final r in snap.data ?? const []) {
-          byDate[r['date'] as String] =
-              (r['held'] as num?)?.toInt() == 1;
+          byDate[r['date'] as String] = (r['held'] as num?)?.toInt() == 1;
         }
         final now = DateTime.now();
         final days = List.generate(
@@ -388,8 +381,8 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('This week',
-                    style: TextStyle(
-                        fontSize: 15.5, fontWeight: FontWeight.w700)),
+                    style:
+                        TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -407,8 +400,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: DayOneColors.muted)),
                         const SizedBox(height: 6),
                         AnimatedContainer(
-                          duration:
-                              const Duration(milliseconds: 250),
+                          duration: const Duration(milliseconds: 250),
                           width: 30,
                           height: 30,
                           decoration: BoxDecoration(
@@ -421,9 +413,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         .withValues(alpha: 0.35),
                             border: isToday
                                 ? Border.all(
-                                    color:
-                                        DayOneColors.terracotta,
-                                    width: 2)
+                                    color: DayOneColors.terracotta, width: 2)
                                 : null,
                           ),
                           alignment: Alignment.center,

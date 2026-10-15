@@ -105,8 +105,7 @@ class BillingService {
           'No Pro products found. The product IDs are not registered in Play Console yet.');
       return;
     }
-    uiState.value =
-        uiState.value.copyWith(products: response.productDetails);
+    uiState.value = uiState.value.copyWith(products: response.productDetails);
   }
 
   Future<void> dispose() async {
@@ -114,12 +113,38 @@ class BillingService {
     _sub = null;
   }
 
+  /// Re-attempts the store-availability + product query after a
+  /// transient failure (the paywall's "Try again" button). Safe to call
+  /// any time; it just refreshes [uiState].
+  Future<void> retryLoadingProducts() async {
+    _clearError();
+    final available = await _iap.isAvailable();
+    if (!available) {
+      _setError(
+          'Google Play Billing is not available on this device. Pro purchases need the Play Store version of the app.');
+      return;
+    }
+    uiState.value = uiState.value.copyWith(storeAvailable: true);
+
+    final response = await _iap.queryProductDetails(kProProductIds);
+    if (response.error != null) {
+      _setError(
+          'Could not load Pro products: ${response.error!.message}. Check that the product IDs exist in Play Console.');
+      return;
+    }
+    if (response.productDetails.isEmpty) {
+      _setError(
+          'No Pro products found. The product IDs are not registered in Play Console yet.');
+      return;
+    }
+    uiState.value = uiState.value.copyWith(products: response.productDetails);
+  }
+
   /// Starts the purchase flow for [productId].
   Future<void> buy(String productId) async {
     _clearError();
-    final product = uiState.value.products
-        .where((p) => p.id == productId)
-        .firstOrNull;
+    final product =
+        uiState.value.products.where((p) => p.id == productId).firstOrNull;
     if (product == null) {
       _setError(
           'Product "$productId" is not available. It may not be registered in Play Console yet.');
@@ -184,16 +209,14 @@ class BillingService {
       case PurchaseStatus.error:
         final msg = p.error?.message ?? 'Unknown billing error';
         final code = p.error?.code ?? '';
-        if (code == 'userCancelled' ||
-            msg.toLowerCase().contains('cancel')) {
+        if (code == 'userCancelled' || msg.toLowerCase().contains('cancel')) {
           // Gentle UX: cancelling is not an error worth alarming about.
           uiState.value = uiState.value.copyWith(
               clearPending: true,
               lastError: 'Purchase cancelled — no charge was made.');
         } else {
           _setError('Purchase failed: $msg');
-          uiState.value =
-              uiState.value.copyWith(clearPending: true);
+          uiState.value = uiState.value.copyWith(clearPending: true);
         }
         if (p.pendingCompletePurchase) {
           await _iap.completePurchase(p);
@@ -238,8 +261,8 @@ class BillingService {
   }
 
   void _setError(String message) {
-    uiState.value = uiState.value.copyWith(
-        lastError: message, restoring: false, clearPending: true);
+    uiState.value = uiState.value
+        .copyWith(lastError: message, restoring: false, clearPending: true);
   }
 
   void _clearError() {

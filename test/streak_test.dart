@@ -43,8 +43,10 @@ void main() {
   });
 
   group('milestones', () {
+    // v4: milestones unlock against the DISPLAY day (start day = Day 1).
     test('unlock at exact day boundaries', () {
-      expect(unlockedMilestones(6), isEmpty);
+      expect(unlockedMilestones(5), isEmpty); // display Day 6
+      expect(unlockedMilestones(6), [7]); // display Day 7
       expect(unlockedMilestones(7), [7]);
       expect(unlockedMilestones(14), [7, 14]);
       expect(unlockedMilestones(90), [7, 14, 30, 60, 90]);
@@ -52,18 +54,20 @@ void main() {
     });
 
     test('nextMilestone points forward', () {
-      expect(nextMilestone(0), 7);
+      expect(nextMilestone(0), 7); // display Day 1
+      expect(nextMilestone(6), 14); // display Day 7 -> next is 14
       expect(nextMilestone(7), 14);
-      expect(nextMilestone(29), 30);
+      expect(nextMilestone(29), 60); // display Day 30 -> next is 60
       expect(nextMilestone(90), isNull);
       expect(nextMilestone(500), isNull);
     });
 
     test('progressToNext is fractional and capped', () {
-      expect(progressToNext(0), 0.0);
+      // display Day 1 of 0..7 span: (1-0)/7
+      expect(progressToNext(0), closeTo(1 / 7, 0.0001));
       expect(progressToNext(90), 1.0);
-      // Day 23 of 7..30 span: (23-14)/(30-14) = 9/16
-      expect(progressToNext(23), closeTo(9 / 16, 0.0001));
+      // display Day 24 of 14..30 span: (24-14)/(30-14) = 10/16
+      expect(progressToNext(23), closeTo(10 / 16, 0.0001));
     });
   });
 
@@ -125,9 +129,15 @@ void main() {
   });
 
   group('dayLabel', () {
-    test('uses Day 0 brand language at start', () {
-      expect(dayLabel(0), 'Day 0');
-      expect(dayLabel(23), 'Day 23');
+    // v4: Day-1 brand language — the start day itself is Day 1.
+    test('labels the start day as Day 1', () {
+      expect(dayLabel(0), 'Day 1');
+      expect(dayLabel(23), 'Day 24');
+    });
+
+    test('displayDay counts the start day as day one', () {
+      expect(displayDay(0), 1);
+      expect(displayDay(8), 9);
     });
   });
 }

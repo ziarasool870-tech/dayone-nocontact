@@ -29,10 +29,11 @@ class DayOneWidgetProvider : HomeWidgetProvider() {
         } catch (_: ClassCastException) {
             widgetData.getInt("streak_start_ms", 0).toLong()
         }
+        // Display-day: the start day itself counts as Day 1, matching the app.
         val days = if (startMs > 0L) {
             TimeUnit.MILLISECONDS.toDays(
                 System.currentTimeMillis() - startMs.coerceAtMost(System.currentTimeMillis())
-            ).toInt().coerceAtLeast(0)
+            ).toInt().coerceAtLeast(0) + 1
         } else {
             0
         }

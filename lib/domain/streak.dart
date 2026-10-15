@@ -3,8 +3,9 @@
 /// Zero Flutter dependencies — fully unit-testable with `flutter test`.
 ///
 /// Model notes (from the locked spec):
-/// - "Day N" headline = full elapsed days since Day-0 start (Day 0 is brand
-///   language: "Day 0 again — most people restart twice").
+/// - "Day N" headline = user-facing day number. The start day itself is
+///   Day 1 (displayDay = elapsedDays + 1) — brand language: "Day One".
+///   Milestone unlocks, "to go" counts and labels all use the display day.
 /// - Relapse restarts the counter ONLY. History (longest streak, total clean
 ///   days, past streak records) is never erased.
 library;
@@ -85,17 +86,22 @@ int daysElapsed(int startMs, int nowMs) {
   );
 }
 
-/// Headline label, e.g. "Day 0", "Day 23".
-String dayLabel(int elapsedDays) => 'Day $elapsedDays';
+/// User-facing day number: the start day itself counts as Day 1.
+/// Storage and elapsed math stay 0-based; this is display-layer only.
+int displayDay(int elapsedDays) => elapsedDays + 1;
 
-/// Milestones unlocked at [elapsedDays].
+/// Headline label, e.g. "Day 1", "Day 24".
+String dayLabel(int elapsedDays) => 'Day ${displayDay(elapsedDays)}';
+
+/// Milestones unlocked at [elapsedDays] — compared against the display day,
+/// so "Day 7" unlocks when the counter reads Day 7.
 List<int> unlockedMilestones(int elapsedDays) =>
-    milestoneDays.where((m) => elapsedDays >= m).toList();
+    milestoneDays.where((m) => displayDay(elapsedDays) >= m).toList();
 
 /// Next milestone after [elapsedDays], or null when all are unlocked.
 int? nextMilestone(int elapsedDays) {
   for (final m in milestoneDays) {
-    if (elapsedDays < m) return m;
+    if (displayDay(elapsedDays) < m) return m;
   }
   return null;
 }
@@ -109,7 +115,7 @@ double progressToNext(int elapsedDays) {
   final prev = idx == 0 ? 0 : milestoneDays[idx - 1];
   final span = next - prev;
   if (span <= 0) return 1.0;
-  return ((elapsedDays - prev) / span).clamp(0.0, 1.0);
+  return ((displayDay(elapsedDays) - prev) / span).clamp(0.0, 1.0);
 }
 
 /// Records a relapse at [nowMs]: the current streak is closed into history

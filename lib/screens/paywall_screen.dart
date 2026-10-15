@@ -51,38 +51,32 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   height: 72,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(colors: [
-                      DayOneColors.gold,
-                      Color(0xFFE8C89F)
-                    ]),
+                    gradient: LinearGradient(
+                        colors: [DayOneColors.gold, Color(0xFFE8C89F)]),
                   ),
                   alignment: Alignment.center,
                   child: const Text('★',
-                      style:
-                          TextStyle(fontSize: 32, color: Colors.white)),
+                      style: TextStyle(fontSize: 32, color: Colors.white)),
                 ),
                 const SizedBox(height: 14),
                 const Text('Day One Pro',
-                    style: TextStyle(
-                        fontSize: 26, fontWeight: FontWeight.w800)),
+                    style:
+                        TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 6),
                 const Text(
                   'Go deeper in your healing.\nCore stays free forever.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      fontSize: 16,
-                      height: 1.5,
-                      color: DayOneColors.muted),
+                      fontSize: 16, height: 1.5, color: DayOneColors.muted),
                 ),
                 const SizedBox(height: 20),
-                _feature('90-day guided program',
-                    'One 2-minute healing task a day'),
-                _feature('Unsent-letter vault',
-                    'Write what you\'ll never send'),
+                _feature(
+                    '90-day guided program', 'One 2-minute healing task a day'),
+                _feature(
+                    'Unsent-letter vault', 'Write what you\'ll never send'),
                 _feature('Premium milestone art',
                     'Dark & gold cards, made to be posted'),
-                _feature('Widget themes + ad-free',
-                    'Your streak, your style'),
+                _feature('Widget themes + ad-free', 'Your streak, your style'),
                 const SizedBox(height: 20),
                 if (!state.storeAvailable)
                   const Card(
@@ -91,8 +85,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
                       child: Text(
                         'Google Play Billing isn\'t available here. Pro needs the Play Store version of the app.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontSize: 15, color: DayOneColors.muted),
+                        style:
+                            TextStyle(fontSize: 15, color: DayOneColors.muted),
                       ),
                     ),
                   )
@@ -101,8 +95,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Text(
-                        state.lastError ??
-                            'Loading Pro options…',
+                        state.lastError ?? 'Loading Pro options…',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                             fontSize: 15, color: DayOneColors.muted),
@@ -120,23 +113,30 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2)),
+                            child: CircularProgressIndicator(strokeWidth: 2)),
                         SizedBox(width: 10),
                         Text('Waiting for Play Store…',
                             style: TextStyle(
-                                fontSize: 15,
-                                color: DayOneColors.muted)),
+                                fontSize: 15, color: DayOneColors.muted)),
                       ],
                     ),
                   ),
                 if (state.lastError != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
-                    child: Text(state.lastError!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                            fontSize: 14.5, color: DayOneColors.sos)),
+                    child: Column(
+                      children: [
+                        Text(state.lastError!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                fontSize: 14.5, color: DayOneColors.sos)),
+                        TextButton(
+                          onPressed: () =>
+                              BillingService.instance.retryLoadingProducts(),
+                          child: const Text('Try again'),
+                        ),
+                      ],
+                    ),
                   ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -145,8 +145,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     onPressed: (state.storeAvailable &&
                             _selectedId != null &&
                             state.pendingProductId == null)
-                        ? () => BillingService.instance
-                            .buy(_selectedId!)
+                        ? () => BillingService.instance.buy(_selectedId!)
                         : null,
                     child: const Text('Go Pro'),
                   ),
@@ -155,8 +154,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 TextButton(
                   onPressed: state.restoring
                       ? null
-                      : () =>
-                          BillingService.instance.restorePurchases(),
+                      : () => BillingService.instance.restorePurchases(),
                   child: Text(state.restoring
                       ? 'Checking your purchases…'
                       : 'Restore purchases'),
@@ -188,19 +186,15 @@ class _PaywallScreenState extends State<PaywallScreen> {
               height: 84,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(colors: [
-                  DayOneColors.gold,
-                  Color(0xFFE8C89F)
-                ]),
+                gradient: LinearGradient(
+                    colors: [DayOneColors.gold, Color(0xFFE8C89F)]),
               ),
               alignment: Alignment.center,
-              child: const Icon(Icons.check,
-                  size: 40, color: Colors.white),
+              child: const Icon(Icons.check, size: 40, color: Colors.white),
             ),
             const SizedBox(height: 20),
             const Text('Day One Pro is active',
-                style:
-                    TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
             const Text(
               'Thank you for investing in your own healing. Premium art, the letter vault and the 90-day program are yours.',
@@ -234,8 +228,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
               shape: BoxShape.circle,
               color: DayOneColors.sageSoft,
             ),
-            child: const Icon(Icons.check,
-                size: 18, color: DayOneColors.sage),
+            child: const Icon(Icons.check, size: 18, color: DayOneColors.sage),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -290,9 +283,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     selected
                         ? Icons.radio_button_checked
                         : Icons.radio_button_off,
-                    color: selected
-                        ? DayOneColors.terracotta
-                        : DayOneColors.faint,
+                    color:
+                        selected ? DayOneColors.terracotta : DayOneColors.faint,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -303,8 +295,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                           children: [
                             Text(_titleFor(id, product),
                                 style: const TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w800)),
+                                    fontSize: 17, fontWeight: FontWeight.w800)),
                             if (id == kProYearlyId) ...[
                               const SizedBox(width: 8),
                               Container(
@@ -312,8 +303,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                                     horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
                                   color: DayOneColors.sageSoft,
-                                  borderRadius:
-                                      BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Text('BEST VALUE',
                                     style: TextStyle(
@@ -329,8 +319,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                                     horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
                                   color: DayOneColors.goldSoft,
-                                  borderRadius:
-                                      BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Text('LAUNCH',
                                     style: TextStyle(
@@ -342,12 +331,12 @@ class _PaywallScreenState extends State<PaywallScreen> {
                           ],
                         ),
                         const SizedBox(height: 2),
-                        Text(product.description.isNotEmpty
+                        Text(
+                            product.description.isNotEmpty
                                 ? product.description
                                 : _subFor(id),
                             style: const TextStyle(
-                                fontSize: 14,
-                                color: DayOneColors.muted)),
+                                fontSize: 14, color: DayOneColors.muted)),
                       ],
                     ),
                   ),

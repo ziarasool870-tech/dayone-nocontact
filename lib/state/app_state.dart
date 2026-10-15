@@ -19,6 +19,7 @@ class AppState extends ChangeNotifier {
   static final AppState instance = AppState._();
 
   bool ready = false;
+  bool _billingListening = false;
 
   int? streakStartMs;
   int longestDays = 0;
@@ -50,8 +51,7 @@ class AppState extends ChangeNotifier {
     notificationsOn = prefs.notificationsOn;
 
     // Load history into longest/total if prefs are empty (fresh import).
-    if (streakStartMs != null &&
-        (longestDays == 0 && totalCleanDays == 0)) {
+    if (streakStartMs != null && (longestDays == 0 && totalCleanDays == 0)) {
       final history = await DayOneDatabase.instance.allStreakHistory();
       for (final row in history) {
         final d = (row['days'] as num?)?.toInt() ?? 0;
@@ -72,7 +72,12 @@ class AppState extends ChangeNotifier {
         minute: prefs.reminderMinute,
       );
     }
-    BillingService.instance.uiState.addListener(_onBillingChanged);
+    // init() can run again (e.g. after a backup import) — never add
+    // the billing listener twice.
+    if (!_billingListening) {
+      BillingService.instance.uiState.addListener(_onBillingChanged);
+      _billingListening = true;
+    }
   }
 
   void _onBillingChanged() => notifyListeners();
@@ -179,8 +184,7 @@ class AppState extends ChangeNotifier {
       await HomeWidget.saveWidgetData<int>(
           'streak_start_ms', streakStartMs ?? 0);
       await HomeWidget.updateWidget(
-        qualifiedAndroidName:
-            'com.dayone.nocontact.DayOneWidgetProvider',
+        qualifiedAndroidName: 'com.dayone.nocontact.DayOneWidgetProvider',
       );
     } catch (_) {
       // Widget is best-effort; the app must never crash over it.
