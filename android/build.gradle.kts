@@ -35,21 +35,22 @@ subprojects {
 // Force JVM target 11 on every Kotlin AND Java compile task of plugin modules
 // (e.g. home_widget 0.8.1 hardcodes kotlinOptions.jvmTarget="1.8" in its own
 // build.gradle while inlining JVM-11 bytecode, which fails release builds).
-// Task-level config beats the module's own setting; withPlugin + configureEach
-// avoids the afterEvaluate ordering problem entirely. Both languages must move
+// Configured in afterEvaluate (registered via withPlugin, so no "already
+// evaluated" ordering problem): this runs AFTER the module's own script and
+// after AGP's internal wiring, so it beats both. Both languages must move
 // together — the toolchain rejects mixed 1.8/11 modules.
 subprojects {
-    pluginManager.withPlugin("org.jetbrains.kotlin.android") {
-        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-            compilerOptions {
-                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-            }
-        }
-    }
     pluginManager.withPlugin("com.android.library") {
-        tasks.withType<JavaCompile>().configureEach {
-            sourceCompatibility = "11"
-            targetCompatibility = "11"
+        afterEvaluate {
+            tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+                compilerOptions {
+                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+                }
+            }
+            tasks.withType<JavaCompile>().configureEach {
+                sourceCompatibility = "11"
+                targetCompatibility = "11"
+            }
         }
     }
 }
