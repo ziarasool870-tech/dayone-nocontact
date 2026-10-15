@@ -32,6 +32,17 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// Pin androidx.glance below the 1.3.0-alpha line: home_widget 0.8.1 declares
+// a dynamic "1.+" version which now resolves to 1.3.0-alpha02, requiring
+// compileSdk 37 while this project (AGP 9.1.0) compiles against android-36.
+subprojects {
+    configurations.all {
+        resolutionStrategy {
+            force("androidx.glance:glance-appwidget:1.1.1")
+        }
+    }
+}
+
 // Force JVM target 11 on every Kotlin AND Java compile task of plugin modules
 // (e.g. home_widget 0.8.1 hardcodes kotlinOptions.jvmTarget="1.8" in its own
 // build.gradle while inlining JVM-11 bytecode, which fails release builds).
