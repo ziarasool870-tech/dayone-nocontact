@@ -62,15 +62,17 @@ class DayOneTheme {
       ),
       textTheme: const TextTheme(
         displayLarge: TextStyle(
+            fontFamily: 'Fraunces',
             color: DayOneColors.ink,
-            fontSize: 52,
+            fontSize: 54,
             fontWeight: FontWeight.w800,
-            letterSpacing: -1.5),
+            letterSpacing: -0.5),
         headlineMedium: TextStyle(
+            fontFamily: 'Fraunces',
             color: DayOneColors.ink,
-            fontSize: 22,
+            fontSize: 24,
             fontWeight: FontWeight.w800,
-            letterSpacing: -0.4),
+            letterSpacing: -0.3),
         titleMedium: TextStyle(
             color: DayOneColors.ink,
             fontSize: 15,

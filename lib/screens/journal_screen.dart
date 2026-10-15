@@ -48,7 +48,10 @@ class _JournalScreenState extends State<JournalScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete this entry?'),
+        backgroundColor: DayOneColors.card,
+        title: const Text('Delete this entry?',
+            style: TextStyle(
+                color: DayOneColors.ink, fontWeight: FontWeight.w800)),
         content: const Text(
             'This can\'t be undone. Your words matter — are you sure?'),
         actions: [

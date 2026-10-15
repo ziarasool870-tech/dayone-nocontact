@@ -235,12 +235,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Your name'),
+        backgroundColor: DayOneColors.card,
+        title: const Text('Your name',
+            style: TextStyle(
+                color: DayOneColors.ink, fontWeight: FontWeight.w800)),
         content: TextField(
           controller: ctrl,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(hintText: 'What should we call you?'),
+          style: const TextStyle(color: DayOneColors.ink),
+          decoration: const InputDecoration(
+            hintText: 'What should we call you?',
+            hintStyle: TextStyle(color: DayOneColors.muted),
+          ),
         ),
         actions: [
           TextButton(
@@ -292,7 +299,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final pass = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(title),
+        backgroundColor: DayOneColors.card,
+        title: Text(title,
+            style: const TextStyle(
+                color: DayOneColors.ink, fontWeight: FontWeight.w800)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,8 +315,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             TextField(
               controller: ctrl,
               obscureText: true,
-              decoration:
-                  const InputDecoration(hintText: 'Backup passphrase'),
+              style: const TextStyle(color: DayOneColors.ink),
+              decoration: const InputDecoration(
+                hintText: 'Backup passphrase',
+                hintStyle: TextStyle(color: DayOneColors.muted),
+              ),
             ),
           ],
         ),
@@ -346,7 +359,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Replace current data?'),
+        backgroundColor: DayOneColors.card,
+        title: const Text('Replace current data?',
+            style: TextStyle(
+                color: DayOneColors.ink, fontWeight: FontWeight.w800)),
         content: const Text(
             'Importing a backup wipes what\'s on this phone now and restores the backup instead.'),
         actions: [

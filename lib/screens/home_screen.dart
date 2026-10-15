@@ -66,6 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _checkedInHeld = held;
         _checkingIn = false;
       });
+      HeartPop.show(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(held

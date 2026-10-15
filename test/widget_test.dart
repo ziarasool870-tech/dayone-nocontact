@@ -27,11 +27,22 @@ void main() {
   });
 
   group('Onboarding', () {
+    // NOTE: the welcome page now breathes forever (a deliberate infinite
+    // animation on the app icon), so pumpAndSettle() can never complete
+    // here. Fixed-duration pumps are used instead. The PressScale wrapper
+    // around the CTA nests two tap recognizers, so the button's onTap
+    // lands one frame after the tap gesture — hence the extra pump().
+    Future<void> tapContinue(WidgetTester tester) async {
+      await tester.tap(find.text('Continue'));
+      await tester.pump(); // flush the nested-gesture onTap
+      await tester.pump(const Duration(milliseconds: 500)); // page animation
+    }
+
     testWidgets('shows the welcome page first', (tester) async {
       await tester.pumpWidget(
         _wrap(OnboardingScreen(onFinished: () {})),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('No Contact'), findsOneWidget);
       expect(find.text('Continue'), findsOneWidget);
@@ -42,16 +53,16 @@ void main() {
       await tester.pumpWidget(
         _wrap(OnboardingScreen(onFinished: () {})),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Page 2: start date picker.
-      await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
+      await tapContinue(tester);
       expect(find.text('STEP 1 OF 2'), findsOneWidget);
 
       // Page 3: quick setup; CTA becomes "Enter Day One".
       await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
+      await tester.pump(); // flush the nested-gesture onTap
+      await tester.pump(const Duration(milliseconds: 500));
       expect(find.text('STEP 2 OF 2'), findsOneWidget);
       expect(find.text('Enter Day One'), findsOneWidget);
     });
@@ -60,7 +71,7 @@ void main() {
       await tester.pumpWidget(
         _wrap(OnboardingScreen(onFinished: () {})),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(
         find.textContaining('One day at a time'),

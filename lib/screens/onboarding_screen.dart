@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/premium.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key, required this.onFinished});
@@ -21,6 +22,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _page = 0;
   DateTime _startDate = DateTime.now();
   bool _forSelf = true;
+  // Month currently shown in the start-date calendar grid.
+  late DateTime _shownMonth = DateTime(DateTime.now().year, DateTime.now().month);
 
   void _next() {
     if (_page < 2) {
@@ -67,9 +70,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
               child: SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _next,
-                  child: Text(_page == 2 ? 'Enter Day One' : 'Continue'),
+                child: PressScale(
+                  child: ElevatedButton(
+                    onPressed: _next,
+                    child:
+                        Text(_page == 2 ? 'Enter Day One' : 'Continue'),
+                  ),
                 ),
               ),
             ),
@@ -111,20 +117,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 96,
-            height: 96,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(colors: [
-                DayOneColors.terracotta,
-                Color(0xFFE8A07E),
-              ]),
-            ),
-            alignment: Alignment.center,
-            child: const Text('♥',
-                style: TextStyle(fontSize: 44, color: Colors.white)),
-          ),
+          const BreathingAppIcon(),
           const SizedBox(height: 26),
           const Text('DAY ONE',
               style: TextStyle(
@@ -135,9 +128,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 8),
           const Text('No Contact',
               style: TextStyle(
-                  fontSize: 34,
+                  fontFamily: 'Fraunces',
+                  fontSize: 38,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.8,
+                  letterSpacing: -0.5,
                   color: DayOneColors.ink)),
           const SizedBox(height: 14),
           const Text(
@@ -160,11 +154,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // ------------------------------------------------------------ page 2
 
   Widget _datePage() {
-    final now = DateTime.now();
-    // Simple 7-day strip: 3 days ago … 3 days ahead.
-    final days = List.generate(
-        7, (i) => DateTime(now.year, now.month, now.day - 3 + i));
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,76 +169,155 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 10),
           const Text('When did\nno contact start?',
               style: TextStyle(
-                  fontSize: 28,
+                  fontFamily: 'Fraunces',
+                  fontSize: 32,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
+                  letterSpacing: -0.3,
                   color: DayOneColors.ink,
                   height: 1.15)),
           const SizedBox(height: 8),
           const Text('Your streak counts from this day.',
               style: TextStyle(fontSize: 13.5, color: DayOneColors.muted)),
-          const SizedBox(height: 26),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: days.map((d) {
-                  final selected = _isSameDay(d, _startDate);
-                  final isToday = _isSameDay(d, now);
-                  return GestureDetector(
-                    onTap: () => setState(() => _startDate = d),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 36,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? DayOneColors.terracotta
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      alignment: Alignment.center,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(_weekday(d),
-                              style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: selected
-                                      ? Colors.white
-                                      : DayOneColors.muted)),
-                          Text('${d.day}',
-                              style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                  color: selected
-                                      ? Colors.white
-                                      : DayOneColors.ink)),
-                          if (isToday)
-                            Text('•',
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    height: 0.6,
-                                    color: selected
-                                        ? Colors.white
-                                        : DayOneColors.terracotta)),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
+          const SizedBox(height: 20),
+          _monthGrid(),
           const SizedBox(height: 12),
           const Text(
             'Pick the day you last had contact. Yesterday counts too — honesty keeps the streak real.',
             style: TextStyle(
                 fontSize: 12.5, height: 1.5, color: DayOneColors.muted),
           ),
+          const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+
+  static const _monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  /// Full-month calendar grid for picking the streak start day.
+  /// Back to Jan 2024, forward to the current month. Future days disabled.
+  Widget _monthGrid() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final y = _shownMonth.year;
+    final m = _shownMonth.month;
+    final daysInMonth = DateTime(y, m + 1, 0).day;
+    final leadBlanks = DateTime(y, m, 1).weekday - 1; // Monday-first
+    final minMonth = DateTime(2024, 1);
+    final maxMonth = DateTime(now.year, now.month);
+    final canGoBack = DateTime(y, m).isAfter(minMonth);
+    final canGoForward = DateTime(y, m).isBefore(maxMonth);
+
+    final cells = <Widget>[];
+    for (var i = 0; i < leadBlanks; i++) {
+      cells.add(const SizedBox(height: 40));
+    }
+    for (var d = 1; d <= daysInMonth; d++) {
+      final date = DateTime(y, m, d);
+      final selected = _isSameDay(date, _startDate);
+      final isToday = _isSameDay(date, today);
+      final disabled = date.isAfter(today);
+      cells.add(
+        GestureDetector(
+          onTap: disabled
+              ? null
+              : () => setState(() => _startDate = date),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            height: 40,
+            decoration: BoxDecoration(
+              color: selected
+                  ? DayOneColors.terracotta
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('$d',
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: selected
+                            ? Colors.white
+                            : disabled
+                                ? DayOneColors.faint
+                                : DayOneColors.ink)),
+                if (isToday)
+                  Text('•',
+                      style: TextStyle(
+                          fontSize: 9,
+                          height: 0.5,
+                          color: selected
+                              ? Colors.white
+                              : DayOneColors.terracotta)),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 14),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  onPressed: canGoBack
+                      ? () => setState(() =>
+                          _shownMonth = DateTime(y, m - 1))
+                      : null,
+                  icon: const Icon(Icons.chevron_left),
+                  color: DayOneColors.terracotta,
+                  disabledColor: DayOneColors.faint,
+                ),
+                Text('${_monthNames[m - 1]} $y',
+                    style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: DayOneColors.ink)),
+                IconButton(
+                  onPressed: canGoForward
+                      ? () => setState(() =>
+                          _shownMonth = DateTime(y, m + 1))
+                      : null,
+                  icon: const Icon(Icons.chevron_right),
+                  color: DayOneColors.terracotta,
+                  disabledColor: DayOneColors.faint,
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: const ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+                  .map((w) => Expanded(
+                        child: Center(
+                          child: Text(w,
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: DayOneColors.muted)),
+                        ),
+                      ))
+                  .toList(),
+            ),
+            const SizedBox(height: 6),
+            GridView.count(
+              crossAxisCount: 7,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: cells,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -271,9 +340,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 10),
           const Text('Who is this\njourney for?',
               style: TextStyle(
-                  fontSize: 28,
+                  fontFamily: 'Fraunces',
+                  fontSize: 32,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
+                  letterSpacing: -0.3,
                   color: DayOneColors.ink,
                   height: 1.15)),
           const SizedBox(height: 22),
@@ -371,7 +441,68 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+}
 
-  String _weekday(DateTime d) =>
-      const ['M', 'T', 'W', 'T', 'F', 'S', 'S'][d.weekday - 1];
+/// The real Day One app icon, gently breathing — the first impression
+/// should feel alive and warm, not static.
+class BreathingAppIcon extends StatefulWidget {
+  const BreathingAppIcon({super.key});
+
+  @override
+  State<BreathingAppIcon> createState() => _BreathingAppIconState();
+}
+
+class _BreathingAppIconState extends State<BreathingAppIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2600),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, child) {
+        final scale =
+            1.0 + 0.07 * Curves.easeInOut.transform(_ctrl.value);
+        return Transform.scale(scale: scale, child: child);
+      },
+      child: Container(
+        width: 124,
+        height: 124,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(35),
+          boxShadow: [
+            BoxShadow(
+              color: DayOneColors.terracotta.withValues(alpha: 0.35),
+              blurRadius: 28,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(35),
+          child: Image.asset(
+            'assets/icon/app_icon.png',
+            width: 124,
+            height: 124,
+            fit: BoxFit.cover,
+          ),
+        ),
+      ),
+    );
+  }
 }

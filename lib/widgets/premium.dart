@@ -64,9 +64,16 @@ class _TickingCounterState extends State<TickingCounter> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          dayLabel(_parts.days),
-          style: Theme.of(context).textTheme.displayLarge,
+        // Gentle count-up when the screen first loads — the number
+        // climbing feels like progress, not just a label.
+        TweenAnimationBuilder<int>(
+          tween: IntTween(begin: 0, end: _parts.days),
+          duration: const Duration(milliseconds: 900),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, _) => Text(
+            dayLabel(value),
+            style: Theme.of(context).textTheme.displayLarge,
+          ),
         ),
         const SizedBox(height: 6),
         Container(
@@ -317,7 +324,8 @@ class _MilestoneCelebrationState extends State<MilestoneCelebration>
                       const SizedBox(height: 16),
                       Text('Day ${widget.day} unlocked!',
                           style: const TextStyle(
-                              fontSize: 22,
+                              fontFamily: 'Fraunces',
+                              fontSize: 24,
                               fontWeight: FontWeight.w800,
                               color: DayOneColors.ink)),
                       const SizedBox(height: 8),
@@ -441,6 +449,122 @@ class SosFab extends StatelessWidget {
               letterSpacing: 1.2),
         ),
         child: const Text('SOS'),
+      ),
+    );
+  }
+}
+
+/// A warm little heart that pops after a daily check-in — a tiny hug
+/// from the app. Scale-in with elastic ease, gentle fade, auto-dismiss.
+class HeartPop {
+  HeartPop._();
+
+  static void show(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (_) => const _HeartPopBody(),
+    );
+  }
+}
+
+class _HeartPopBody extends StatefulWidget {
+  const _HeartPopBody();
+
+  @override
+  State<_HeartPopBody> createState() => _HeartPopBodyState();
+}
+
+class _HeartPopBodyState extends State<_HeartPopBody>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 800))
+      ..forward().then((_) {
+        if (mounted) Navigator.of(context).pop();
+      });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (_, __) {
+          final t = _ctrl.value;
+          final scale = t < 0.45
+              ? Curves.elasticOut.transform(t / 0.45) * 1.0
+              : 1.0;
+          final opacity = t < 0.7 ? 1.0 : 1.0 - (t - 0.7) / 0.3;
+          return Opacity(
+            opacity: opacity.clamp(0.0, 1.0),
+            child: Transform.scale(
+              scale: (0.3 + 0.7 * scale).clamp(0.3, 1.2),
+              child: Container(
+                width: 92,
+                height: 92,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: DayOneColors.terracotta,
+                  boxShadow: [
+                    BoxShadow(
+                      color: DayOneColors.terracotta
+                          .withValues(alpha: 0.4),
+                      blurRadius: 32,
+                      spreadRadius: 4,
+                    ),
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: const Text('♥',
+                    style:
+                        TextStyle(fontSize: 44, color: Colors.white)),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Subtle press feedback for primary CTAs: the button gently shrinks
+/// while pressed. Does not steal taps — the child's onPressed still fires.
+class PressScale extends StatefulWidget {
+  const PressScale({super.key, required this.child, this.scale = 0.96});
+
+  final Widget child;
+  final double scale;
+
+  @override
+  State<PressScale> createState() => _PressScaleState();
+}
+
+class _PressScaleState extends State<PressScale> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? widget.scale : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: widget.child,
       ),
     );
   }

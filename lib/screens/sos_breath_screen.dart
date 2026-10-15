@@ -5,6 +5,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/content.dart';
 import '../theme/app_theme.dart';
@@ -29,7 +30,8 @@ class SosBreathScreen extends StatelessWidget {
               const SizedBox(height: 18),
               const Text('Breathe with me',
                   style: TextStyle(
-                      fontSize: 24,
+                      fontFamily: 'Fraunces',
+                      fontSize: 26,
                       fontWeight: FontWeight.w800,
                       color: DayOneColors.ink)),
               const SizedBox(height: 8),
@@ -37,16 +39,18 @@ class SosBreathScreen extends StatelessWidget {
               const Spacer(),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushReplacement(
-                      FadeSlidePageRoute(
-                          child: const SosOptionsScreen()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: DayOneColors.sos),
-                  child: const Text('I need more help'),
+                child: PressScale(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pushReplacement(
+                        FadeSlidePageRoute(
+                            child: const SosOptionsScreen()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: DayOneColors.sos),
+                    child: const Text('I need more help'),
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -202,11 +206,12 @@ class SosOptionsScreen extends StatelessWidget {
               const SizedBox(height: 10),
               const Text("You're doing great.\nWhat do you need?",
                   style: TextStyle(
-                      fontSize: 26,
+                      fontFamily: 'Fraunces',
+                      fontSize: 28,
                       fontWeight: FontWeight.w800,
                       height: 1.2,
                       color: DayOneColors.ink)),
-              const SizedBox(height: 22),
+              const Spacer(flex: 1),
               _option(
                 context,
                 icon: Icons.menu_book_outlined,
@@ -237,26 +242,24 @@ class SosOptionsScreen extends StatelessWidget {
                   );
                 },
               ),
-              const Spacer(),
+              const Spacer(flex: 2),
               Card(
                 color: const Color(0xFFFFF7EF),
-                child: const Padding(
-                  padding: EdgeInsets.all(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('In crisis?',
+                      const Text('Need to talk to someone right now?',
                           style: TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w800)),
-                      SizedBox(height: 4),
-                      Text(
-                        '$crisisUs\n$crisisUk',
-                        style: TextStyle(
-                            fontSize: 13,
-                            height: 1.6,
-                            color: DayOneColors.muted),
-                      ),
+                      const SizedBox(height: 6),
+                      _crisisLink(
+                          context, 'US: call or text ', '988', '988'),
+                      const SizedBox(height: 2),
+                      _crisisLink(context, 'UK: Samaritans ', '116 123',
+                          '116123'),
                     ],
                   ),
                 ),
@@ -273,6 +276,31 @@ class SosOptionsScreen extends StatelessWidget {
               const SizedBox(height: 16),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Tappable crisis-helpline number (opens the phone dialer).
+  Widget _crisisLink(
+      BuildContext context, String label, String number, String dial) {
+    return GestureDetector(
+      onTap: () => launchUrl(Uri(scheme: 'tel', path: dial)),
+      child: Text.rich(
+        TextSpan(
+          style: const TextStyle(
+              fontSize: 13, height: 1.6, color: DayOneColors.muted),
+          children: [
+            TextSpan(text: label),
+            TextSpan(
+              text: number,
+              style: const TextStyle(
+                color: DayOneColors.terracottaDeep,
+                fontWeight: FontWeight.w800,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ],
         ),
       ),
     );
