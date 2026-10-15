@@ -125,9 +125,6 @@ Map<String, String> resolveCrisisHelpline(String? countryCode) {
   return crisisHelplines[code] ?? crisisHelplines['US']!;
 }
 
-/// Milestone days for unlock logic. Single source of truth.
-const List<int> milestoneDays = [7, 14, 30, 60, 90];
-
 /// Relapse copy — shame-free by design.
 const String relapseTitle = "It's okay.";
 const String relapseBody = "Many people restart before it sticks. "
