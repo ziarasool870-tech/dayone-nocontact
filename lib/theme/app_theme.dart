@@ -54,6 +54,7 @@ class DayOneTheme {
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
+          fontFamily: 'Poppins',
           color: DayOneColors.ink,
           fontSize: 22,
           fontWeight: FontWeight.w800,
@@ -62,30 +63,28 @@ class DayOneTheme {
       ),
       textTheme: const TextTheme(
         displayLarge: TextStyle(
-            fontFamily: 'Fraunces',
             color: DayOneColors.ink,
             fontSize: 54,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5),
         headlineMedium: TextStyle(
-            fontFamily: 'Fraunces',
             color: DayOneColors.ink,
             fontSize: 24,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.3),
         titleMedium: TextStyle(
             color: DayOneColors.ink,
-            fontSize: 15,
+            fontSize: 17,
             fontWeight: FontWeight.w700),
         bodyMedium: TextStyle(
-            color: DayOneColors.ink, fontSize: 13.5, height: 1.5),
-        bodySmall: TextStyle(color: DayOneColors.muted, fontSize: 12),
+            color: DayOneColors.ink, fontSize: 15.5, height: 1.5),
+        bodySmall: TextStyle(color: DayOneColors.muted, fontSize: 14),
         labelSmall: TextStyle(
             color: DayOneColors.terracottaDeep,
             fontSize: 11,
             fontWeight: FontWeight.w700,
             letterSpacing: 2.0),
-      ),
+      ).apply(fontFamily: 'Poppins'),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: DayOneColors.terracotta,
@@ -93,8 +92,8 @@ class DayOneTheme {
           minimumSize: const Size.fromHeight(54),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle:
-              const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          textStyle: const TextStyle(
+              fontFamily: 'Poppins', fontSize: 17, fontWeight: FontWeight.w700),
           elevation: 0,
         ),
       ),
@@ -105,8 +104,8 @@ class DayOneTheme {
           side: const BorderSide(color: Color(0xFFEAD9CC), width: 1.5),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle:
-              const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          textStyle: const TextStyle(
+              fontFamily: 'Poppins', fontSize: 17, fontWeight: FontWeight.w700),
         ),
       ),
       cardTheme: CardThemeData(
@@ -143,10 +142,10 @@ class DayOneTheme {
         unselectedItemColor: DayOneColors.muted,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
-        selectedLabelStyle:
-            TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-        unselectedLabelStyle:
-            TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+        selectedLabelStyle: TextStyle(
+            fontFamily: 'Poppins', fontSize: 11, fontWeight: FontWeight.w700),
+        unselectedLabelStyle: TextStyle(
+            fontFamily: 'Poppins', fontSize: 11, fontWeight: FontWeight.w600),
       ),
     );
   }

@@ -30,7 +30,6 @@ class SosBreathScreen extends StatelessWidget {
               const SizedBox(height: 18),
               const Text('Breathe with me',
                   style: TextStyle(
-                      fontFamily: 'Fraunces',
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
                       color: DayOneColors.ink)),
@@ -94,7 +93,7 @@ class SosOptionsScreen extends StatelessWidget {
               const Text(
                   'You wrote these on a clear-headed day. Trust that version of you.',
                   style: TextStyle(
-                      fontSize: 13, color: DayOneColors.muted)),
+                      fontSize: 15, color: DayOneColors.muted)),
               const SizedBox(height: 14),
               Expanded(
                 child: ListView.separated(
@@ -120,7 +119,7 @@ class SosOptionsScreen extends StatelessWidget {
                             child: Text('${i + 1}',
                                 style: const TextStyle(
                                     fontWeight: FontWeight.w800,
-                                    fontSize: 13,
+                                    fontSize: 15,
                                     color: DayOneColors
                                         .terracottaDeep)),
                           ),
@@ -128,7 +127,7 @@ class SosOptionsScreen extends StatelessWidget {
                           Expanded(
                             child: Text(defaultReasons[i],
                                 style: const TextStyle(
-                                    fontSize: 14, height: 1.5)),
+                                    fontSize: 16, height: 1.5)),
                           ),
                         ],
                       ),
@@ -161,7 +160,7 @@ class SosOptionsScreen extends StatelessWidget {
             const SizedBox(height: 6),
             const Text('Pick one. Just one.',
                 style:
-                    TextStyle(fontSize: 13, color: DayOneColors.muted)),
+                    TextStyle(fontSize: 15, color: DayOneColors.muted)),
             const SizedBox(height: 14),
             ...distractionIdeas.map((d) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
@@ -177,7 +176,7 @@ class SosOptionsScreen extends StatelessWidget {
                           Expanded(
                             child: Text(d,
                                 style: const TextStyle(
-                                    fontSize: 13.5, height: 1.45)),
+                                    fontSize: 15.5, height: 1.45)),
                           ),
                         ],
                       ),
@@ -206,7 +205,6 @@ class SosOptionsScreen extends StatelessWidget {
               const SizedBox(height: 10),
               const Text("You're doing great.\nWhat do you need?",
                   style: TextStyle(
-                      fontFamily: 'Fraunces',
                       fontSize: 28,
                       fontWeight: FontWeight.w800,
                       height: 1.2,
@@ -252,7 +250,7 @@ class SosOptionsScreen extends StatelessWidget {
                     children: [
                       const Text('Need to talk to someone right now?',
                           style: TextStyle(
-                              fontSize: 13.5,
+                              fontSize: 15.5,
                               fontWeight: FontWeight.w800)),
                       const SizedBox(height: 6),
                       _crisisLink(
@@ -289,7 +287,7 @@ class SosOptionsScreen extends StatelessWidget {
       child: Text.rich(
         TextSpan(
           style: const TextStyle(
-              fontSize: 13, height: 1.6, color: DayOneColors.muted),
+              fontSize: 15, height: 1.6, color: DayOneColors.muted),
           children: [
             TextSpan(text: label),
             TextSpan(
@@ -338,12 +336,12 @@ class SosOptionsScreen extends StatelessWidget {
                     children: [
                       Text(title,
                           style: const TextStyle(
-                              fontSize: 15,
+                              fontSize: 17,
                               fontWeight: FontWeight.w700)),
                       const SizedBox(height: 2),
                       Text(sub,
                           style: const TextStyle(
-                              fontSize: 12.5,
+                              fontSize: 14.5,
                               color: DayOneColors.muted)),
                     ],
                   ),

@@ -74,7 +74,7 @@ class _MainShellState extends State<MainShell> {
           Positioned(
             left: 0,
             right: 0,
-            bottom: 92,
+            bottom: 70,
             child: Center(child: SosFab(onTap: _openSos)),
           ),
         ],

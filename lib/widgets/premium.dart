@@ -109,7 +109,7 @@ class _TickingCounterState extends State<TickingCounter> {
               const Text('strong',
                   style: TextStyle(
                       color: DayOneColors.terracottaDeep,
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700)),
             ],
           ),
@@ -123,7 +123,7 @@ class _TickingCounterState extends State<TickingCounter> {
         key: key,
         style: const TextStyle(
             color: DayOneColors.terracottaDeep,
-            fontSize: 13,
+            fontSize: 15,
             fontWeight: FontWeight.w800,
             fontFeatures: [FontFeature.tabularFigures()]),
       );
@@ -132,7 +132,7 @@ class _TickingCounterState extends State<TickingCounter> {
         padding: EdgeInsets.symmetric(horizontal: 5),
         child: Text('·',
             style: TextStyle(
-                color: DayOneColors.terracottaDeep, fontSize: 13)),
+                color: DayOneColors.terracottaDeep, fontSize: 15)),
       );
 }
 
@@ -212,7 +212,7 @@ class _BreathCircleState extends State<BreathCircle>
                   style: const TextStyle(
                     color: DayOneColors.terracottaDeep,
                     fontWeight: FontWeight.w700,
-                    fontSize: 15,
+                    fontSize: 17,
                   ),
                 ),
               ),
@@ -222,7 +222,7 @@ class _BreathCircleState extends State<BreathCircle>
               'This urge usually passes in about 20 minutes.\nStay for 60 seconds.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: DayOneColors.muted, fontSize: 13, height: 1.5),
+                  color: DayOneColors.muted, fontSize: 15, height: 1.5),
             ),
           ],
         );
@@ -324,7 +324,6 @@ class _MilestoneCelebrationState extends State<MilestoneCelebration>
                       const SizedBox(height: 16),
                       Text('Day ${widget.day} unlocked!',
                           style: const TextStyle(
-                              fontFamily: 'Fraunces',
                               fontSize: 24,
                               fontWeight: FontWeight.w800,
                               color: DayOneColors.ink)),
@@ -334,7 +333,7 @@ class _MilestoneCelebrationState extends State<MilestoneCelebration>
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             color: DayOneColors.muted,
-                            fontSize: 13.5,
+                            fontSize: 15.5,
                             height: 1.5),
                       ),
                       const SizedBox(height: 20),
@@ -444,7 +443,7 @@ class SosFab extends StatelessWidget {
           shadowColor:
               DayOneColors.sos.withValues(alpha: 0.4),
           textStyle: const TextStyle(
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.2),
         ),

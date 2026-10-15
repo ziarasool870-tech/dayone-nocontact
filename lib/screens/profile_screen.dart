@@ -72,7 +72,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 4),
             const Text('How your home-screen widget looks.',
                 style:
-                    TextStyle(fontSize: 13, color: DayOneColors.muted)),
+                    TextStyle(fontSize: 15, color: DayOneColors.muted)),
             const SizedBox(height: 14),
             _themeOption(
               title: 'Cream',
@@ -163,7 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Text(title,
                               style: const TextStyle(
-                                  fontSize: 14.5,
+                                  fontSize: 16.5,
                                   fontWeight: FontWeight.w700)),
                           if (locked) ...[
                             const SizedBox(width: 8),
@@ -187,7 +187,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       Text(sub,
                           style: const TextStyle(
-                              fontSize: 12.5,
+                              fontSize: 14.5,
                               color: DayOneColors.muted)),
                     ],
                   ),
@@ -309,7 +309,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             const Text(
               'Your backup is encrypted with this passphrase. Don\'t lose it — we can\'t recover it for you.',
-              style: TextStyle(fontSize: 13, color: DayOneColors.muted),
+              style: TextStyle(fontSize: 15, color: DayOneColors.muted),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -414,7 +414,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Text(
                   'Commonly shared self-care wisdom — not medical advice.',
                   style: TextStyle(
-                      fontSize: 12.5, color: DayOneColors.muted)),
+                      fontSize: 14.5, color: DayOneColors.muted)),
               const SizedBox(height: 14),
               Expanded(
                 child: ListView.separated(
@@ -433,12 +433,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             Text(item['title']!,
                                 style: const TextStyle(
-                                    fontSize: 15,
+                                    fontSize: 17,
                                     fontWeight: FontWeight.w700)),
                             const SizedBox(height: 6),
                             Text(item['body']!,
                                 style: const TextStyle(
-                                    fontSize: 13.5,
+                                    fontSize: 15.5,
                                     height: 1.55,
                                     color: DayOneColors.muted)),
                           ],
@@ -473,11 +473,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 10),
             const Text(disclaimerText,
                 style: TextStyle(
-                    fontSize: 14, height: 1.6, color: DayOneColors.muted)),
+                    fontSize: 16, height: 1.6, color: DayOneColors.muted)),
             const SizedBox(height: 12),
             Text('$crisisUs\n$crisisUk',
                 style: const TextStyle(
-                    fontSize: 13.5,
+                    fontSize: 15.5,
                     height: 1.6,
                     fontWeight: FontWeight.w600)),
           ],
@@ -543,7 +543,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ? 'Day One Pro'
                                 : 'Healing since ${app.streakStartMs == null ? '—' : _fmtDate(app.streakStartMs!)}',
                             style: const TextStyle(
-                                fontSize: 12.5,
+                                fontSize: 14.5,
                                 color: DayOneColors.muted),
                           ),
                         ],
@@ -611,7 +611,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Text(
                                       '90-day program · letter vault · premium art',
                                       style: TextStyle(
-                                          fontSize: 12.5,
+                                          fontSize: 14.5,
                                           color: Colors.white70)),
                                 ],
                               ),
@@ -636,7 +636,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Text(
                                 'Day One Pro active — thank you for supporting your own healing.',
                                 style: TextStyle(
-                                    fontSize: 13.5,
+                                    fontSize: 15.5,
                                     fontWeight: FontWeight.w600)),
                           ),
                         ],
@@ -646,7 +646,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 16),
                 const Text('Settings',
                     style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: DayOneColors.muted)),
                 const SizedBox(height: 8),
@@ -664,7 +664,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 16),
                 const Text('Your data',
                     style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: DayOneColors.muted)),
                 const SizedBox(height: 8),
@@ -705,7 +705,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 16),
                 const Text('About',
                     style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: DayOneColors.muted)),
                 const SizedBox(height: 8),
@@ -763,12 +763,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       Text(title,
                           style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 16,
                               fontWeight: FontWeight.w600)),
                       if (sub.isNotEmpty)
                         Text(sub,
                             style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 14,
                                 color: DayOneColors.muted)),
                     ],
                   ),

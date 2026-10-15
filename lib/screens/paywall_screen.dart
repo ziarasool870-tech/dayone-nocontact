@@ -70,7 +70,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   'Go deeper in your healing.\nCore stays free forever.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       height: 1.5,
                       color: DayOneColors.muted),
                 ),
@@ -92,7 +92,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         'Google Play Billing isn\'t available here. Pro needs the Play Store version of the app.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                            fontSize: 13, color: DayOneColors.muted),
+                            fontSize: 15, color: DayOneColors.muted),
                       ),
                     ),
                   )
@@ -105,7 +105,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                             'Loading Pro options…',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                            fontSize: 13, color: DayOneColors.muted),
+                            fontSize: 15, color: DayOneColors.muted),
                       ),
                     ),
                   )
@@ -125,7 +125,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         SizedBox(width: 10),
                         Text('Waiting for Play Store…',
                             style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 15,
                                 color: DayOneColors.muted)),
                       ],
                     ),
@@ -136,7 +136,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     child: Text(state.lastError!,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                            fontSize: 12.5, color: DayOneColors.sos)),
+                            fontSize: 14.5, color: DayOneColors.sos)),
                   ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -206,7 +206,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
               'Thank you for investing in your own healing. Premium art, the letter vault and the 90-day program are yours.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 14, height: 1.55, color: DayOneColors.muted),
+                  fontSize: 16, height: 1.55, color: DayOneColors.muted),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -244,10 +244,10 @@ class _PaywallScreenState extends State<PaywallScreen> {
               children: [
                 Text(title,
                     style: const TextStyle(
-                        fontSize: 14.5, fontWeight: FontWeight.w700)),
+                        fontSize: 16.5, fontWeight: FontWeight.w700)),
                 Text(sub,
                     style: const TextStyle(
-                        fontSize: 12.5, color: DayOneColors.muted)),
+                        fontSize: 14.5, color: DayOneColors.muted)),
               ],
             ),
           ),
@@ -303,7 +303,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                           children: [
                             Text(_titleFor(id, product),
                                 style: const TextStyle(
-                                    fontSize: 15,
+                                    fontSize: 17,
                                     fontWeight: FontWeight.w800)),
                             if (id == kProYearlyId) ...[
                               const SizedBox(width: 8),
@@ -346,7 +346,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                                 ? product.description
                                 : _subFor(id),
                             style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 14,
                                 color: DayOneColors.muted)),
                       ],
                     ),

@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 10),
             Text(relapseBody,
                 style: const TextStyle(
-                    fontSize: 14, height: 1.55, color: DayOneColors.muted)),
+                    fontSize: 16, height: 1.55, color: DayOneColors.muted)),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -179,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: Text(quote,
                               style: const TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 16,
                                   height: 1.5,
                                   color: DayOneColors.ink,
                                   fontStyle: FontStyle.italic)),
@@ -198,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         const Text('Did you hold no contact today?',
                             style: TextStyle(
-                                fontSize: 15,
+                                fontSize: 17,
                                 fontWeight: FontWeight.w700)),
                         const SizedBox(height: 4),
                         Text(
@@ -208,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ? 'Logged: held strong today.'
                                   : 'Logged: slipped today. It happens.',
                           style: const TextStyle(
-                              fontSize: 12.5,
+                              fontSize: 14.5,
                               color: DayOneColors.muted),
                         ),
                         const SizedBox(height: 12),
@@ -245,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 12),
                         const Text('Mood right now',
                             style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: DayOneColors.muted)),
                         const SizedBox(height: 6),
@@ -257,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: const Text(
                               'I broke no contact — restart',
                               style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 14,
                                   color: DayOneColors.muted,
                                   decoration:
                                       TextDecoration.underline),
@@ -285,13 +285,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ? 'All milestones unlocked'
                                   : 'Next milestone · Day $next',
                               style: const TextStyle(
-                                  fontSize: 13.5,
+                                  fontSize: 15.5,
                                   fontWeight: FontWeight.w700),
                             ),
                             if (next != null)
                               Text('${next - days} to go',
                                   style: const TextStyle(
-                                      fontSize: 12.5,
+                                      fontSize: 14.5,
                                       fontWeight: FontWeight.w700,
                                       color:
                                           DayOneColors.terracotta)),
@@ -389,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const Text('This week',
                     style: TextStyle(
-                        fontSize: 13.5, fontWeight: FontWeight.w700)),
+                        fontSize: 15.5, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

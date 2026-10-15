@@ -137,7 +137,7 @@ class _JournalScreenState extends State<JournalScreen> {
                                   const SizedBox(height: 6),
                                   Text(title,
                                       style: const TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 17,
                                           fontWeight: FontWeight.w700)),
                                 ],
                                 if (body.isNotEmpty) ...[
@@ -147,7 +147,7 @@ class _JournalScreenState extends State<JournalScreen> {
                                     maxLines: 4,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                        fontSize: 13.5,
+                                        fontSize: 15.5,
                                         height: 1.5,
                                         color: DayOneColors.ink),
                                   ),
@@ -160,16 +160,18 @@ class _JournalScreenState extends State<JournalScreen> {
                     },
                   ),
                 ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 76),
-        child: FloatingActionButton.extended(
-          onPressed: () => _openEditor(),
-          backgroundColor: DayOneColors.terracotta,
-          foregroundColor: Colors.white,
-          icon: const Icon(Icons.add),
-          label: const Text('New entry'),
-        ),
-      ),
+      floatingActionButton: _entries.isEmpty
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(bottom: 70),
+              child: FloatingActionButton.extended(
+                onPressed: () => _openEditor(),
+                backgroundColor: DayOneColors.terracotta,
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.add),
+                label: const Text('New entry'),
+              ),
+            ),
       floatingActionButtonLocation:
           FloatingActionButtonLocation.endFloat,
     );
@@ -202,7 +204,7 @@ class _JournalScreenState extends State<JournalScreen> {
               'The text you don\'t send is the streak you keep. Start your first entry.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 13.5,
+                  fontSize: 15.5,
                   height: 1.5,
                   color: DayOneColors.muted),
             ),
@@ -321,7 +323,7 @@ class _JournalEditorState extends State<JournalEditor> {
                   filled: false,
                   contentPadding: EdgeInsets.zero,
                 ),
-                style: const TextStyle(fontSize: 15, height: 1.6),
+                style: const TextStyle(fontSize: 17, height: 1.6),
               ),
             ),
             const Text('Private · stored only on your phone',

@@ -64,7 +64,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
                 const Text(
                   'Every milestone is proof.\nShare how far you\'ve come.',
                   style: TextStyle(
-                      fontSize: 14, height: 1.5, color: DayOneColors.muted),
+                      fontSize: 16, height: 1.5, color: DayOneColors.muted),
                 ),
                 const SizedBox(height: 16),
                 GridView.builder(
@@ -116,7 +116,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
                 const Text(
                   'Dark & gold editions of every card. Made to be posted.',
                   style: TextStyle(
-                      fontSize: 12.5, color: DayOneColors.muted),
+                      fontSize: 14.5, color: DayOneColors.muted),
                 ),
                 const SizedBox(height: 12),
                 if (!isPro)
@@ -134,13 +134,13 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
                                 children: [
                                   Text('Unlock premium art',
                                       style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 17,
                                           fontWeight: FontWeight.w800)),
                                   SizedBox(height: 4),
                                   Text(
                                       'Plus the 90-day program and letter vault.',
                                       style: TextStyle(
-                                          fontSize: 12.5,
+                                          fontSize: 14.5,
                                           color: DayOneColors.muted)),
                                 ],
                               ),
@@ -167,7 +167,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
                   const Text(
                     'Unlock milestones to preview premium art here.',
                     style: TextStyle(
-                        fontSize: 12.5, color: DayOneColors.muted),
+                        fontSize: 14.5, color: DayOneColors.muted),
                   ),
               ],
             ),

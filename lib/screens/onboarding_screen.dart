@@ -121,14 +121,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 26),
           const Text('DAY ONE',
               style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 3,
                   color: DayOneColors.terracotta)),
           const SizedBox(height: 8),
           const Text('No Contact',
               style: TextStyle(
-                  fontFamily: 'Fraunces',
                   fontSize: 38,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.5,
@@ -138,12 +137,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             'Your breakup recovery companion.\nOne day at a time.',
             textAlign: TextAlign.center,
             style: TextStyle(
-                fontSize: 15, height: 1.5, color: DayOneColors.muted),
+                fontSize: 17, height: 1.5, color: DayOneColors.muted),
           ),
           const SizedBox(height: 18),
           const Text('Free forever where it matters.',
               style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: 14.5,
                   fontWeight: FontWeight.w600,
                   color: DayOneColors.terracottaDeep)),
         ],
@@ -169,7 +168,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 10),
           const Text('When did\nno contact start?',
               style: TextStyle(
-                  fontFamily: 'Fraunces',
                   fontSize: 32,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.3,
@@ -177,14 +175,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   height: 1.15)),
           const SizedBox(height: 8),
           const Text('Your streak counts from this day.',
-              style: TextStyle(fontSize: 13.5, color: DayOneColors.muted)),
+              style: TextStyle(fontSize: 15.5, color: DayOneColors.muted)),
+          const SizedBox(height: 4),
+          const Text('This is the day you chose yourself.',
+              style: TextStyle(
+                  fontSize: 14.5,
+                  fontStyle: FontStyle.italic,
+                  color: DayOneColors.terracottaDeep)),
           const SizedBox(height: 20),
           _monthGrid(),
           const SizedBox(height: 12),
           const Text(
             'Pick the day you last had contact. Yesterday counts too — honesty keeps the streak real.',
             style: TextStyle(
-                fontSize: 12.5, height: 1.5, color: DayOneColors.muted),
+                fontSize: 14.5, height: 1.5, color: DayOneColors.muted),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Not sure? Pick your best guess — you can change it later in Profile.',
+            style: TextStyle(
+                fontSize: 14.5, height: 1.5, color: DayOneColors.muted),
           ),
           const SizedBox(height: 24),
         ],
@@ -233,30 +243,51 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ? DayOneColors.terracotta
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
+              boxShadow: selected
+                  ? [
+                      BoxShadow(
+                        color: DayOneColors.terracotta
+                            .withValues(alpha: 0.45),
+                        blurRadius: 12,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : null,
             ),
             alignment: Alignment.center,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('$d',
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: selected
-                            ? Colors.white
-                            : disabled
-                                ? DayOneColors.faint
-                                : DayOneColors.ink)),
-                if (isToday)
-                  Text('•',
-                      style: TextStyle(
-                          fontSize: 9,
-                          height: 0.5,
-                          color: selected
-                              ? Colors.white
-                              : DayOneColors.terracotta)),
-              ],
-            ),
+            child: selected
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('$d',
+                          style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white)),
+                      const SizedBox(width: 3),
+                      const Icon(Icons.favorite,
+                          size: 10, color: Colors.white),
+                    ],
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('$d',
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: disabled
+                                  ? DayOneColors.faint
+                                  : DayOneColors.ink)),
+                      if (isToday)
+                        const Text('•',
+                            style: TextStyle(
+                                fontSize: 9,
+                                height: 0.5,
+                                color: DayOneColors.terracotta)),
+                    ],
+                  ),
           ),
         ),
       );
@@ -281,7 +312,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 Text('${_monthNames[m - 1]} $y',
                     style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 17,
                         fontWeight: FontWeight.w800,
                         color: DayOneColors.ink)),
                 IconButton(
@@ -340,7 +371,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 10),
           const Text('Who is this\njourney for?',
               style: TextStyle(
-                  fontFamily: 'Fraunces',
                   fontSize: 32,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.3,
@@ -369,12 +399,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       children: [
                         Text('Daily check-in reminders',
                             style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w700,
                                 color: DayOneColors.ink)),
                         Text('One gentle nudge a day',
                             style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 14,
                                 color: DayOneColors.muted)),
                       ],
                     ),
