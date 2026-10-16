@@ -15,9 +15,14 @@ import 'package:share_plus/share_plus.dart';
 
 import '../theme/app_theme.dart';
 
+/// Play Store URL for the app. Deterministic for the package name —
+/// resolves once the listing is live. Appended to every share payload
+/// so the organic loop isn't a dead end.
+const String kPlayStoreUrl =
+    'https://play.google.com/store/apps/details?id=com.dayone.nocontact';
+
 /// Per-milestone share messages.
-const Map<int, String> milestoneMessages = {
-  7: 'One week of choosing yourself.',
+const Map<int, String> milestoneMessages = {  7: 'One week of choosing yourself.',
   14: 'Two weeks strong. The fog is lifting.',
   30: 'One month of choosing yourself.',
   60: 'Two months. Look how far you\'ve come.',
@@ -195,7 +200,7 @@ class ShareService {
       await file.writeAsBytes(bytes.buffer.asUint8List(), flush: true);
       final result = await SharePlus.instance.share(ShareParams(
         files: [XFile(file.path, mimeType: 'image/png')],
-        text: 'Day $day of no contact. One day at a time. — Day One',
+        text: 'Day $day of no contact. One day at a time. — Day One\n$kPlayStoreUrl',
       ));
       return result.status == ShareResultStatus.success ||
           result.status == ShareResultStatus.dismissed;

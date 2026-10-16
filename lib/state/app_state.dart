@@ -26,6 +26,11 @@ class AppState extends ChangeNotifier {
   int totalCleanDays = 0;
   String userName = '';
   bool notificationsOn = true;
+
+  /// Transient (never persisted): the OS is currently refusing to post
+  /// notifications (permission denied/revoked). While true, the UI must
+  /// show "Off — permission needed" and never a fake "On".
+  bool notificationsBlocked = false;
   int reminderHour = 20;
   int reminderMinute = 0;
 
@@ -75,15 +80,17 @@ class AppState extends ChangeNotifier {
     }
 
     _detectNewMilestones(firstRun: true);
+
+    // Honest reminder state: if the OS will not let us post, say so
+    // instead of showing a fake "On". Never nags with a dialog here.
+    notificationsBlocked = false;
+    if (notificationsOn) {
+      notificationsBlocked = !await NotificationService.instance
+          .rescheduleQuietly(
+              hour: prefs.reminderHour, minute: prefs.reminderMinute);
+    }
     ready = true;
     notifyListeners();
-
-    if (notificationsOn) {
-      await NotificationService.instance.scheduleDailyReminder(
-        hour: prefs.reminderHour,
-        minute: prefs.reminderMinute,
-      );
-    }
     // init() can run again (e.g. after a backup import) — never add
     // the billing listener twice.
     if (!_billingListening) {
@@ -180,22 +187,30 @@ class AppState extends ChangeNotifier {
 
   Future<void> setNotificationsOn(bool on) async {
     final prefs = await PrefsService.instance();
-    await prefs.setNotificationsOn(on);
-    notificationsOn = on;
-    // UI first: the toggle must never desync if the platform call throws.
-    notifyListeners();
-    try {
-      if (on) {
-        await NotificationService.instance.scheduleDailyReminder(
-          hour: prefs.reminderHour,
-          minute: prefs.reminderMinute,
-        );
-      } else {
+    if (!on) {
+      await prefs.setNotificationsOn(false);
+      notificationsOn = false;
+      notificationsBlocked = false;
+      notifyListeners();
+      try {
         await NotificationService.instance.cancelDailyReminder();
+      } catch (_) {
+        // Best-effort.
       }
-    } catch (_) {
-      // Notification plumbing is best-effort; the setting itself is saved.
+      return;
     }
+    // Turning ON: permission first — the toggle must never claim "On"
+    // when the OS will silently drop every reminder. The system dialog
+    // (Android 13+) is fine here: the user just asked for reminders.
+    final scheduled = await NotificationService.instance.scheduleDailyReminder(
+      hour: prefs.reminderHour,
+      minute: prefs.reminderMinute,
+    );
+    notificationsBlocked = !scheduled;
+    // Persist the truth, not the wish.
+    await prefs.setNotificationsOn(scheduled);
+    notificationsOn = scheduled;
+    notifyListeners();
   }
 
   /// Persists the daily reminder time and reschedules the notification.
@@ -206,13 +221,15 @@ class AppState extends ChangeNotifier {
     reminderMinute = minute;
     notifyListeners();
     if (notificationsOn) {
-      try {
-        await NotificationService.instance.scheduleDailyReminder(
-          hour: hour,
-          minute: minute,
-        );
-      } catch (_) {
-        // Best-effort; the time itself is saved.
+      // Quiet path: never nag with a dialog on a time change. If the
+      // permission went away, say so honestly instead of faking "On".
+      final ok = await NotificationService.instance.rescheduleQuietly(
+        hour: hour,
+        minute: minute,
+      );
+      if (!ok) {
+        notificationsBlocked = true;
+        notifyListeners();
       }
     }
   }

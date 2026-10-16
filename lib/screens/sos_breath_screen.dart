@@ -557,6 +557,10 @@ class SosOptionsScreen extends StatelessWidget {
 
   /// Locale-aware crisis card: the helpline for the user's country,
   /// tappable to dial, plus a "more countries" fallback link.
+  ///
+  /// Safety rule: when the device country isn't one of the 7 covered
+  /// ones, show ONLY the international directory — never a foreign
+  /// country's number on a crisis screen.
   Widget _crisisCard(BuildContext context) {
     final entry = resolveCrisisHelpline(
       WidgetsBinding.instance.platformDispatcher.locale.countryCode,
@@ -571,39 +575,55 @@ class SosOptionsScreen extends StatelessWidget {
             const Text('Need to talk to someone right now?',
                 style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800)),
             const SizedBox(height: 6),
-            GestureDetector(
-              onTap: () => launchUrl(Uri(scheme: 'tel', path: entry['dial'])),
-              child: Text.rich(
-                TextSpan(
-                  style: const TextStyle(
-                      fontSize: 15, height: 1.6, color: DayOneColors.muted),
-                  children: [
-                    TextSpan(text: entry['prefix']),
-                    TextSpan(
-                      text: entry['number'],
-                      style: const TextStyle(
-                        color: DayOneColors.terracottaDeep,
-                        fontWeight: FontWeight.w800,
-                        decoration: TextDecoration.underline,
+            if (entry != null) ...[
+              GestureDetector(
+                onTap: () => launchUrl(Uri(scheme: 'tel', path: entry['dial'])),
+                child: Text.rich(
+                  TextSpan(
+                    style: const TextStyle(
+                        fontSize: 15, height: 1.6, color: DayOneColors.muted),
+                    children: [
+                      TextSpan(text: entry['prefix']),
+                      TextSpan(
+                        text: entry['number'],
+                        style: const TextStyle(
+                          color: DayOneColors.terracottaDeep,
+                          fontWeight: FontWeight.w800,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
-            GestureDetector(
-              onTap: () => launchUrl(Uri.parse(crisisFallbackUrl),
-                  mode: LaunchMode.externalApplication),
-              child: const Text(
-                'More countries →',
-                style: TextStyle(
-                  fontSize: 13.5,
-                  color: DayOneColors.muted,
-                  decoration: TextDecoration.underline,
+              const SizedBox(height: 4),
+              GestureDetector(
+                onTap: () => launchUrl(Uri.parse(crisisFallbackUrl),
+                    mode: LaunchMode.externalApplication),
+                child: const Text(
+                  'More countries →',
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    color: DayOneColors.muted,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
-            ),
+            ] else
+              GestureDetector(
+                onTap: () => launchUrl(Uri.parse(crisisFallbackUrl),
+                    mode: LaunchMode.externalApplication),
+                child: const Text(
+                  'Find a helpline in your country →',
+                  style: TextStyle(
+                    fontSize: 15,
+                    height: 1.6,
+                    color: DayOneColors.terracottaDeep,
+                    fontWeight: FontWeight.w800,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

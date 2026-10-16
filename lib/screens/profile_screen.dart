@@ -13,6 +13,7 @@ import '../domain/streak.dart' as streak_math;
 import '../services/backup_service.dart';
 import '../services/billing_service.dart';
 import '../services/notification_service.dart';
+import '../services/share_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/premium.dart';
@@ -22,6 +23,20 @@ import 'paywall_screen.dart';
 
 /// Support inbox for the "Send feedback" row.
 const kSupportEmail = 'support@dayonenocontact.app';
+
+/// Pure summary text for the Notifications profile row (unit-testable).
+///
+/// 'Off — permission needed' wins over everything: the row must never
+/// claim "On" when the OS will silently drop every reminder.
+String reminderSummaryText({
+  required bool notificationsOn,
+  required bool notificationsBlocked,
+  required String timeLabel,
+}) {
+  if (notificationsBlocked) return 'Off — permission needed';
+  if (!notificationsOn) return 'Off';
+  return 'On · $timeLabel';
+}
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -479,11 +494,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               final entry = resolveCrisisHelpline(
                 WidgetsBinding.instance.platformDispatcher.locale.countryCode,
               );
-              // Tappable, like the SOS crisis card — someone reading
-              // this in a hard moment should be able to call directly.
+              // Safety: uncovered countries get ONLY the international
+              // directory — never a foreign number. Tappable, like the
+              // SOS crisis card.
+              final hasNumber = entry != null;
               return GestureDetector(
-                onTap: () => launchUrl(Uri(scheme: 'tel', path: entry['dial'])),
-                child: Text('${entry['prefix']}${entry['number']}',
+                onTap: () => hasNumber
+                    ? launchUrl(Uri(scheme: 'tel', path: entry['dial']))
+                    : launchUrl(Uri.parse(crisisFallbackUrl),
+                        mode: LaunchMode.externalApplication),
+                child: Text(
+                    hasNumber
+                        ? '${entry['prefix']}${entry['number']}'
+                        : 'Find a helpline in your country →',
                     style: const TextStyle(
                         fontSize: 15.5,
                         height: 1.6,
@@ -498,12 +521,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  /// "On · 8:00 PM" / "Off" for the notifications row.
+  /// "On · 8:00 PM" / "Off" / "Off — permission needed" for the
+  /// notifications row. Never claims "On" when reminders cannot fire.
   String _reminderSummary(AppState app) {
-    if (!app.notificationsOn) return 'Off';
     final t = TimeOfDay(hour: app.reminderHour, minute: app.reminderMinute)
         .format(context);
-    return 'On · $t';
+    return reminderSummaryText(
+      notificationsOn: app.notificationsOn,
+      notificationsBlocked: app.notificationsBlocked,
+      timeLabel: t,
+    );
   }
 
   /// Gentle reminder settings: on/off toggle plus the daily time picker.
@@ -529,7 +556,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               listenable: AppState.instance,
               builder: (context, _) {
                 final app = AppState.instance;
-                final on = app.notificationsOn;
+                // Effective state: a blocked permission is honestly "off".
+                final on = app.notificationsOn && !app.notificationsBlocked;
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -547,6 +575,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ),
+                    if (app.notificationsBlocked)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2, bottom: 4),
+                        child: Text(
+                          'Permission was denied — flip Reminders on to allow notifications.',
+                          style: TextStyle(
+                              fontSize: 13.5, color: DayOneColors.muted),
+                        ),
+                      ),
                     const Divider(height: 8),
                     InkWell(
                       borderRadius: BorderRadius.circular(12),
@@ -872,7 +909,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _row('Share Day One', 'Tell a friend who needs this',
                     onTap: () => SharePlus.instance.share(ShareParams(
                         text:
-                            'I\'m using Day One: No Contact to heal, one day at a time.'))),
+                            'I\'m using Day One: No Contact to heal, one day at a time.\n$kPlayStoreUrl'))),
                 const SizedBox(height: 16),
                 const Text('Your data',
                     style: TextStyle(

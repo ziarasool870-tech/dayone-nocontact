@@ -119,10 +119,12 @@ const Map<String, Map<String, String>> crisisHelplines = {
 const String crisisFallbackUrl = 'https://findahelpline.com';
 
 /// Picks the crisis helpline matching the device's country.
-/// Falls back to the US entry when the country isn't covered.
-Map<String, String> resolveCrisisHelpline(String? countryCode) {
+/// Returns null when the country isn't covered — callers must then show
+/// ONLY the international directory link, never another country's number.
+/// A wrong number on a crisis screen is a safety failure, not a UX nit.
+Map<String, String>? resolveCrisisHelpline(String? countryCode) {
   final code = countryCode?.toUpperCase();
-  return crisisHelplines[code] ?? crisisHelplines['US']!;
+  return crisisHelplines[code];
 }
 
 /// Relapse copy — shame-free by design.

@@ -162,6 +162,15 @@ class _FakeAndroidNotifications extends AndroidFlutterLocalNotificationsPlugin
     required AndroidScheduleMode scheduleMode,
     DateTimeComponents? matchDateTimeComponents,
   }) async {}
+
+  // v7: the app now gates scheduling on the OS permission. The fake
+  // models a device where notifications are allowed, so scheduling
+  // paths behave exactly like the old no-op fake.
+  @override
+  Future<bool?> areNotificationsEnabled() async => true;
+
+  @override
+  Future<bool?> requestNotificationsPermission() async => true;
 }
 
 /// Test double for url_launcher: records the launched URL and returns a

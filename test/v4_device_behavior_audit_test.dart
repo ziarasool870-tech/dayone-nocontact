@@ -376,13 +376,16 @@ void main() {
     });
   });
 
-  group('Crisis helpline resolution (v4)', () {
-    test('null / empty / unknown country falls back to US', () {
-      expect(resolveCrisisHelpline(null)['dial'], '988');
-      expect(resolveCrisisHelpline('')['dial'], '988');
-      expect(resolveCrisisHelpline('DE')['dial'], '988');
-      expect(resolveCrisisHelpline('gb')['dial'], '116123');
-      expect(resolveCrisisHelpline('GB')['dial'], '116123');
+  group('Crisis helpline resolution (v4, v7 safety fix)', () {
+    test('null / empty / unknown country resolves to null (directory only)', () {
+      // Safety: never show a foreign country's number on a crisis
+      // screen. Uncovered countries get the international directory.
+      expect(resolveCrisisHelpline(null), isNull);
+      expect(resolveCrisisHelpline(''), isNull);
+      expect(resolveCrisisHelpline('DE'), isNull);
+      expect(resolveCrisisHelpline('IN'), isNull);
+      expect(resolveCrisisHelpline('gb')!['dial'], '116123');
+      expect(resolveCrisisHelpline('GB')!['dial'], '116123');
     });
 
     test('all 7 premium entries have digits-only dial paths', () {

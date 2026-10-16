@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Daily check-in reminders (flutter_local_notifications). Android 13+
+         requires this declared AND granted at runtime, or the OS silently
+         drops every notification. We schedule inexactly, so no exact-alarm
+         permission is needed. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="Day One: No Contact"
         android:name="${applicationName}"

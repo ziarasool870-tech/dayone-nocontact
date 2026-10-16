@@ -152,6 +152,15 @@ class _FakeAndroidNotifications extends AndroidFlutterLocalNotificationsPlugin
     required AndroidScheduleMode scheduleMode,
     DateTimeComponents? matchDateTimeComponents,
   }) async {}
+
+  // v7: the app now gates scheduling on the OS permission. The fake
+  // models a device where notifications are granted, so the reminder
+  // toggle flips state and UI exactly like the old no-op fake.
+  @override
+  Future<bool?> areNotificationsEnabled() async => true;
+
+  @override
+  Future<bool?> requestNotificationsPermission() async => true;
 }
 
 void main() {
