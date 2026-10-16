@@ -24,7 +24,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // onPageChanged, which lags the 320ms animation.
   bool _animating = false;
   DateTime _startDate = DateTime.now();
-  bool _forSelf = true;
   // Month currently shown in the start-date calendar grid.
   late DateTime _shownMonth =
       DateTime(DateTime.now().year, DateTime.now().month);
@@ -423,24 +422,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         letterSpacing: 2.5,
                         color: DayOneColors.terracotta)),
                 const SizedBox(height: 10),
-                const Text('Who is this\njourney for?',
+                const Text('A gentle daily\nnudge',
                     style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.3,
                         color: DayOneColors.ink,
                         height: 1.15)),
-                const SizedBox(height: 22),
-                Row(
-                  children: [
-                    Expanded(child: _choiceCard(true, 'Me', "I'm healing")),
-                    const SizedBox(width: 12),
-                    Expanded(
-                        child:
-                            _choiceCard(false, 'A friend', 'Supporting them')),
-                  ],
+                const SizedBox(height: 10),
+                const Text(
+                  'One soft reminder to check in with your heart.',
+                  style: TextStyle(
+                      fontSize: 16, height: 1.5, color: DayOneColors.muted),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 22),
                 Card(
                   child: Padding(
                     padding:
@@ -490,40 +485,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _choiceCard(bool self, String title, String sub) {
-    final selected = _forSelf == self;
-    return GestureDetector(
-      onTap: () => setState(() => _forSelf = self),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: selected ? DayOneColors.terracotta : DayOneColors.cardBorder,
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Text(title,
-                style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: selected
-                        ? DayOneColors.terracotta
-                        : DayOneColors.muted)),
-            const SizedBox(height: 4),
-            Text(sub,
-                style:
-                    const TextStyle(fontSize: 11.5, color: DayOneColors.muted)),
-          ],
         ),
       ),
     );

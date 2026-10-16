@@ -130,7 +130,10 @@ class AppState extends ChangeNotifier {
         DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
     await prefs.setStreakStartMs(start);
     streakStartMs = start;
-    await _detectNewMilestones();
+    // Backdated starts (e.g. 6 months ago) already earned milestones:
+    // mark them seen SILENTLY — they show unlocked in the gallery,
+    // but no notification burst / celebration spam on day one.
+    await _detectNewMilestones(firstRun: true);
     await _pushWidget();
     notifyListeners();
   }
