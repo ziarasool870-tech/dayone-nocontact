@@ -16,7 +16,7 @@ class DayOneDatabase {
 
   static final DayOneDatabase instance = DayOneDatabase._();
 
-  static const _version = 2;
+  static const _version = 3;
   Database? _db;
 
   Future<Database> get database async {
@@ -39,6 +39,9 @@ class DayOneDatabase {
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await _createV2(db);
+        }
+        if (oldVersion < 3) {
+          await _migrateV3(db);
         }
       },
     );
@@ -79,9 +82,17 @@ class DayOneDatabase {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             created_ms INTEGER NOT NULL,
             title TEXT NOT NULL DEFAULT '',
-            body TEXT NOT NULL DEFAULT ''
+            body TEXT NOT NULL DEFAULT '',
+            kind TEXT NOT NULL DEFAULT 'letter'
           )
         ''');
+  }
+
+  /// v3: "Let it out" vents live in the same table, distinguished by [kind].
+  /// Existing rows (and fresh v2 installs, via the DEFAULT above) are letters.
+  Future<void> _migrateV3(Database db) async {
+    await db.execute(
+        "ALTER TABLE letters ADD COLUMN kind TEXT NOT NULL DEFAULT 'letter'");
   }
 
   // ---------------------------------------------------------------- check-ins
@@ -179,24 +190,42 @@ class DayOneDatabase {
 
   // -------------------------------------------------------------------- letters
   // Unsent-letter vault: sealed letters the user will never send.
+  // [kind] is 'letter' (tender, Letters tab) or 'vent' ("Let it out" tab).
 
-  Future<int> insertLetter({required String title, required String body}) async {
+  Future<int> insertLetter(
+      {required String title, required String body, String kind = 'letter'}) async {
     final db = await database;
     return db.insert('letters', {
       'created_ms': DateTime.now().millisecondsSinceEpoch,
       'title': title,
       'body': body,
+      'kind': kind,
     });
   }
 
-  Future<List<Map<String, Object?>>> allLetters() async {
+  Future<List<Map<String, Object?>>> allLetters({String? kind}) async {
     final db = await database;
-    return db.query('letters', orderBy: 'created_ms DESC');
+    return db.query(
+      'letters',
+      where: kind == null ? null : 'kind = ?',
+      whereArgs: kind == null ? null : [kind],
+      orderBy: 'created_ms DESC',
+    );
   }
 
-  Future<int> letterCount() async {
+  Future<Map<String, Object?>?> letterById(int id) async {
     final db = await database;
-    final rows = await db.rawQuery('SELECT COUNT(*) AS c FROM letters');
+    final rows =
+        await db.query('letters', where: 'id = ?', whereArgs: [id], limit: 1);
+    return rows.isEmpty ? null : rows.first;
+  }
+
+  Future<int> letterCount({String? kind}) async {
+    final db = await database;
+    final rows = kind == null
+        ? await db.rawQuery('SELECT COUNT(*) AS c FROM letters')
+        : await db.rawQuery(
+            'SELECT COUNT(*) AS c FROM letters WHERE kind = ?', [kind]);
     return (rows.first['c'] as num?)?.toInt() ?? 0;
   }
 

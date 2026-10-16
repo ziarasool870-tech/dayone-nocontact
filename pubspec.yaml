@@ -1,7 +1,7 @@
 name: day_one_nocontact
 description: "Day One: No Contact — breakup recovery companion. Streak tracking, journaling, SOS support, milestone cards."
 publish_to: "none"
-version: 1.0.9+10
+version: 1.0.10+11
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

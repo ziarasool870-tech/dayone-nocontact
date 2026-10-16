@@ -24,6 +24,10 @@ class NotificationService {
   static const _channelId = 'dayone_reminders';
   static const _channelName = 'Gentle reminders';
 
+  /// Set by the UI layer (main.dart) so a notification tap can navigate.
+  /// Payloads this service emits: `vent:<id>`.
+  static void Function(String? payload)? onNotificationTap;
+
   bool _ready = false;
 
   Future<void> init() async {
@@ -31,7 +35,12 @@ class NotificationService {
     tzdata.initializeTimeZones();
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const settings = InitializationSettings(android: android);
-    await _plugin.initialize(settings);
+    await _plugin.initialize(
+      settings,
+      onDidReceiveNotificationResponse: (response) {
+        onNotificationTap?.call(response.payload);
+      },
+    );
     await _plugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
@@ -151,5 +160,52 @@ class NotificationService {
         ),
       ),
     );
+  }
+
+  // ---------------------------------------------------------- "Let it out"
+
+  /// Discreet 24h re-read nudge body. No mention of anger or the ex —
+  /// a glanced notification reveals nothing.
+  static const ventReminderBody =
+      "Yesterday's words are waiting. Ready to let them go?";
+
+  /// Base for per-vent notification ids (3000 + vent row id).
+  static const _ventIdBase = 3000;
+
+  /// "Let it out" 24-hour re-read nudge. Permission-aware: if notifications
+  /// are blocked, skips silently (no nag). Tapping opens the vent in
+  /// re-read mode via [onNotificationTap].
+  Future<bool> scheduleVentReminder({required int ventId}) async {
+    if (!await notificationsAllowed()) return false;
+    try {
+      await init();
+      final when = tz.TZDateTime.now(tz.local).add(const Duration(hours: 24));
+      await _plugin.zonedSchedule(
+        _ventIdBase + ventId,
+        'Day One',
+        ventReminderBody,
+        when,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            _channelId,
+            _channelName,
+            importance: Importance.defaultImportance,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: 'vent:$ventId',
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Cancels a vent's 24h nudge (e.g. after it is burned early).
+  Future<void> cancelVentReminder(int ventId) async {
+    try {
+      await init();
+      await _plugin.cancel(_ventIdBase + ventId);
+    } catch (_) {}
   }
 }
