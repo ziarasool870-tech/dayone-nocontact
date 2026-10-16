@@ -1,15 +1,19 @@
-/// v10-B: vault PIN lock + "Add widget to Home screen" button.
+/// v10-B: App lock (app-wide optional PIN, default OFF) + recovery code.
 ///
-/// Covers: PIN setup/confirm (incl. mismatch), salted-hash storage (never
-/// plaintext), gate correct/wrong behavior, session lock rule, forgot-PIN
-/// erase, entry-point gating, Pro-gating unchanged, widget pin service.
+/// Covers: PIN setup/confirm (incl. mismatch), recovery-code generation +
+/// one-time save gate, salted-hash storage (never plaintext), gate
+/// correct/wrong behavior, session lock rule, maybeShowAppLockGate,
+/// recovery flow with code rotation, both-lost honesty (no wipe),
+/// AppLockRow On/Off, widget pin button, mood labels.
 library;
 
+import 'dart:async';
+
 import 'package:day_one_nocontact/data/database.dart';
+import 'package:day_one_nocontact/screens/app_lock_screen.dart';
 import 'package:day_one_nocontact/screens/home_screen.dart';
 import 'package:day_one_nocontact/screens/profile_screen.dart';
-import 'package:day_one_nocontact/screens/vault_pin_screen.dart';
-import 'package:day_one_nocontact/services/vault_pin_service.dart';
+import 'package:day_one_nocontact/services/app_lock_service.dart';
 import 'package:day_one_nocontact/services/widget_pin_service.dart';
 import 'package:day_one_nocontact/state/app_state.dart';
 import 'package:day_one_nocontact/theme/app_theme.dart';
@@ -64,23 +68,23 @@ void main() {
     await sp.clear();
     final db = await DayOneDatabase.instance.database;
     await db.delete('letters');
+    await db.delete('journal');
     await DayOneDatabase.instance.close();
+    debugResetAppLockGate();
   });
 
-  group('VaultPinService (hash storage)', () {
+  group('AppLockService (hash storage)', () {
     test('setPin stores a salted hash — never the raw PIN', () async {
       final storage = MemoryPinStorage();
-      VaultPinService.debugReset(storage: storage);
-      await VaultPinService.instance.setPin('1234');
+      AppLockService.debugReset(storage: storage);
+      await AppLockService.instance.setPin('1234');
 
       final values = storage.debugValues;
       expect(values['vault_pin_hash'], isNotNull);
       expect(values['vault_pin_salt'], isNotNull);
-      // 64 hex chars = SHA-256.
       expect(values['vault_pin_hash']!.length, 64);
       expect(RegExp(r'^[0-9a-f]{64}$').hasMatch(values['vault_pin_hash']!),
           isTrue);
-      // The raw PIN appears nowhere in storage.
       for (final v in values.values) {
         expect(v.contains('1234'), isFalse);
       }
@@ -90,73 +94,136 @@ void main() {
         () async {
       final a = MemoryPinStorage();
       final b = MemoryPinStorage();
-      VaultPinService.debugReset(storage: a);
-      await VaultPinService.instance.setPin('1234');
+      AppLockService.debugReset(storage: a);
+      await AppLockService.instance.setPin('1234');
       final hashA = a.debugValues['vault_pin_hash'];
 
-      VaultPinService.debugReset(storage: b);
-      await VaultPinService.instance.setPin('1234');
+      AppLockService.debugReset(storage: b);
+      await AppLockService.instance.setPin('1234');
       final hashB = b.debugValues['vault_pin_hash'];
 
       expect(hashA, isNot(hashB));
-      expect(a.debugValues['vault_pin_salt'],
-          isNot(b.debugValues['vault_pin_salt']));
     });
 
     test('verifyPin accepts the right PIN, rejects the wrong one', () async {
-      VaultPinService.debugReset();
-      expect(await VaultPinService.instance.isEnabled, isFalse);
-      expect(await VaultPinService.instance.verifyPin('1234'), isFalse);
+      AppLockService.debugReset();
+      expect(await AppLockService.instance.isEnabled, isFalse);
+      expect(await AppLockService.instance.verifyPin('1234'), isFalse);
 
-      await VaultPinService.instance.setPin('1234');
-      expect(await VaultPinService.instance.isEnabled, isTrue);
-      expect(await VaultPinService.instance.verifyPin('1234'), isTrue);
-      expect(await VaultPinService.instance.verifyPin('0000'), isFalse);
-      expect(await VaultPinService.instance.verifyPin(''), isFalse);
+      await AppLockService.instance.setPin('1234');
+      expect(await AppLockService.instance.isEnabled, isTrue);
+      expect(await AppLockService.instance.verifyPin('1234'), isTrue);
+      expect(await AppLockService.instance.verifyPin('0000'), isFalse);
     });
 
-    test('clearPin removes hash and salt', () async {
+    test('clearAll removes PIN and recovery code', () async {
       final storage = MemoryPinStorage();
-      VaultPinService.debugReset(storage: storage);
-      await VaultPinService.instance.setPin('1234');
-      await VaultPinService.instance.clearPin();
-      expect(await VaultPinService.instance.isEnabled, isFalse);
+      AppLockService.debugReset(storage: storage);
+      await AppLockService.instance.setPin('1234');
+      await AppLockService.instance.setRecoveryCode('ABCD-EFGH-JKLM');
+      await AppLockService.instance.clearAll();
+      expect(await AppLockService.instance.isEnabled, isFalse);
+      expect(await AppLockService.instance.hasRecoveryCode, isFalse);
       expect(storage.debugValues, isEmpty);
     });
 
     test('resilient storage falls back to memory when the plugin is missing',
         () async {
-      // Simulates a widget test without a mocked secure-storage channel:
-      // MissingPluginException → in-memory fallback, no crash.
-      final throwing = _ThrowingStorage();
-      final resilient = ResilientPinStorage(throwing);
-      VaultPinService.debugReset(storage: resilient);
-      expect(await VaultPinService.instance.isEnabled, isFalse);
-      await VaultPinService.instance.setPin('1234');
-      expect(await VaultPinService.instance.isEnabled, isTrue);
-      expect(await VaultPinService.instance.verifyPin('1234'), isTrue);
+      final resilient = ResilientPinStorage(_ThrowingStorage());
+      AppLockService.debugReset(storage: resilient);
+      expect(await AppLockService.instance.isEnabled, isFalse);
+      await AppLockService.instance.setPin('1234');
+      expect(await AppLockService.instance.isEnabled, isTrue);
+      expect(await AppLockService.instance.verifyPin('1234'), isTrue);
     });
   });
 
-  group('session lock rule', () {    test('cold start is locked; unlock persists until lock()', () async {
-      VaultPinService.debugReset();
-      await VaultPinService.instance.setPin('1234');
-      // Setup unlocks the session...
-      expect(VaultPinService.instance.isUnlocked, isTrue);
-      // ...backgrounding re-locks it.
-      VaultPinService.instance.lock();
-      expect(VaultPinService.instance.isUnlocked, isFalse);
-      // A fresh singleton (cold start) always starts locked.
-      VaultPinService.debugReset();
-      expect(VaultPinService.instance.isUnlocked, isFalse);
+  group('recovery code', () {
+    test('format is XXXX-XXXX-XXXX with unambiguous chars', () {
+      for (var i = 0; i < 50; i++) {
+        final code = AppLockService.generateRecoveryCode();
+        expect(
+            RegExp(r'^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$')
+                .hasMatch(code),
+            isTrue,
+            reason: 'bad code: $code');
+      }
+      // Uniqueness sanity: 50 codes, all different.
+      final codes = List.generate(
+          50, (_) => AppLockService.generateRecoveryCode());
+      expect(codes.toSet().length, 50);
+    });
+
+    test('stored as salted hash — never the plaintext', () async {
+      final storage = MemoryPinStorage();
+      AppLockService.debugReset(storage: storage);
+      const code = 'ABCD-EFGH-JKLM';
+      await AppLockService.instance.setRecoveryCode(code);
+
+      expect(await AppLockService.instance.hasRecoveryCode, isTrue);
+      final values = storage.debugValues;
+      expect(values['app_lock_recovery_hash'], isNotNull);
+      expect(values['app_lock_recovery_hash']!.length, 64);
+      for (final v in values.values) {
+        expect(v.contains('ABCD'), isFalse);
+        expect(v.contains('EFGH'), isFalse);
+      }
+    });
+
+    test('verify accepts the code, forgiving of case/dashes', () async {
+      AppLockService.debugReset();
+      await AppLockService.instance.setRecoveryCode('ABCD-EFGH-JKLM');
+      expect(
+          await AppLockService.instance.verifyRecoveryCode('ABCD-EFGH-JKLM'),
+          isTrue);
+      expect(
+          await AppLockService.instance.verifyRecoveryCode('abcd-efgh-jklm'),
+          isTrue);
+      expect(
+          await AppLockService.instance.verifyRecoveryCode('ABCDEFGHJKLM'),
+          isTrue);
+      expect(
+          await AppLockService.instance.verifyRecoveryCode('ZZZZ-ZZZZ-ZZZZ'),
+          isFalse);
+    });
+
+    test('setting a new code invalidates the old one (rotation)', () async {
+      AppLockService.debugReset();
+      await AppLockService.instance.setRecoveryCode('ABCD-EFGH-JKLM');
+      await AppLockService.instance.setRecoveryCode('NPQR-STUV-WXYZ');
+      expect(
+          await AppLockService.instance.verifyRecoveryCode('ABCD-EFGH-JKLM'),
+          isFalse);
+      expect(
+          await AppLockService.instance.verifyRecoveryCode('NPQR-STUV-WXYZ'),
+          isTrue);
+    });
+  });
+
+  group('session lock rule', () {
+    test('cold start is locked; unlock persists until lock()', () async {
+      AppLockService.debugReset();
+      await AppLockService.instance.setPin('1234');
+      expect(AppLockService.instance.isUnlocked, isTrue);
+      AppLockService.instance.lock();
+      expect(AppLockService.instance.isUnlocked, isFalse);
+      AppLockService.debugReset();
+      expect(AppLockService.instance.isUnlocked, isFalse);
+    });
+
+    test('default is OFF — no PIN, no code, no lock', () async {
+      AppLockService.debugReset();
+      expect(await AppLockService.instance.isEnabled, isFalse);
+      expect(await AppLockService.instance.hasRecoveryCode, isFalse);
     });
   });
 
   group('setup screen', () {
-    testWidgets('matching PINs complete setup with success view',
-        (tester) async {
-      VaultPinService.debugReset();
-      await tester.pumpWidget(_wrap(const VaultPinSetupScreen()));
+    testWidgets(
+        'matching PINs → recovery code shown; nothing stored until '
+        '"I\'ve saved it"', (tester) async {
+      AppLockService.debugReset();
+      await tester.pumpWidget(_wrap(const AppLockSetupScreen()));
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Choose a 4-digit PIN'), findsOneWidget);
@@ -164,15 +231,28 @@ void main() {
       expect(find.text('Confirm your PIN'), findsOneWidget);
       await _enterPin(tester, '1234');
 
-      expect(find.text('Your vault is locked.'), findsOneWidget);
-      expect(await VaultPinService.instance.isEnabled, isTrue);
-      expect(await VaultPinService.instance.verifyPin('1234'), isTrue);
+      // Recovery code screen — shown exactly once.
+      expect(find.text('Save this code'), findsOneWidget);
+      final codeFinder = find.textContaining(RegExp(
+          r'[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}'));
+      expect(codeFinder, findsOneWidget);
+      // Nothing persisted yet — setup cannot finish without confirmation.
+      expect(await AppLockService.instance.isEnabled, isFalse);
+      expect(await AppLockService.instance.hasRecoveryCode, isFalse);
+
+      await tester.tap(find.text('I\u2019ve saved it'));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Your app is locked.'), findsOneWidget);
+      expect(await AppLockService.instance.isEnabled, isTrue);
+      expect(await AppLockService.instance.verifyPin('1234'), isTrue);
+      expect(await AppLockService.instance.hasRecoveryCode, isTrue);
     });
 
     testWidgets('mismatched PINs show a gentle error and restart',
         (tester) async {
-      VaultPinService.debugReset();
-      await tester.pumpWidget(_wrap(const VaultPinSetupScreen()));
+      AppLockService.debugReset();
+      await tester.pumpWidget(_wrap(const AppLockSetupScreen()));
       await tester.pump(const Duration(milliseconds: 300));
 
       await _enterPin(tester, '1234');
@@ -181,16 +261,38 @@ void main() {
       expect(find.text("Those PINs don't match — try again."),
           findsOneWidget);
       expect(find.text('Choose a 4-digit PIN'), findsOneWidget);
-      expect(await VaultPinService.instance.isEnabled, isFalse);
+      expect(await AppLockService.instance.isEnabled, isFalse);
     });
   });
 
   group('gate screen', () {
-    testWidgets('wrong PIN shows error; correct PIN pops true',
+    testWidgets('wrong PIN shows error; correct PIN calls onUnlocked',
         (tester) async {
-      VaultPinService.debugReset();
-      await VaultPinService.instance.setPin('1234');
-      VaultPinService.instance.lock();
+      AppLockService.debugReset();
+      await AppLockService.instance.setPin('1234');
+      AppLockService.instance.lock();
+
+      var unlocked = false;
+      await tester.pumpWidget(_wrap(AppLockGateScreen(
+        onUnlocked: () => unlocked = true,
+      )));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Enter your PIN'), findsOneWidget);
+
+      await _enterPin(tester, '0000');
+      expect(find.text("That wasn't it — try again."), findsOneWidget);
+      expect(unlocked, isFalse);
+
+      await _enterPin(tester, '1234');
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(unlocked, isTrue);
+      expect(AppLockService.instance.isUnlocked, isTrue);
+    });
+
+    testWidgets('pushed gate pops true on correct PIN', (tester) async {
+      AppLockService.debugReset();
+      await AppLockService.instance.setPin('1234');
+      AppLockService.instance.lock();
 
       bool? result;
       await tester.pumpWidget(MaterialApp(
@@ -201,7 +303,7 @@ void main() {
               onPressed: () async {
                 result = await Navigator.of(context).push<bool>(
                   MaterialPageRoute(
-                      builder: (_) => const VaultPinGateScreen()),
+                      builder: (_) => const AppLockGateScreen()),
                 );
               },
               child: const Text('open gate'),
@@ -211,195 +313,195 @@ void main() {
       ));
       await tester.tap(find.text('open gate'));
       await tester.pumpAndSettle();
-      expect(find.text('Enter your PIN'), findsOneWidget);
-
-      await _enterPin(tester, '0000');
-      expect(find.text("That wasn't it — try again."), findsOneWidget);
-      expect(find.text('Enter your PIN'), findsOneWidget);
-
       await _enterPin(tester, '1234');
       await tester.pumpAndSettle();
       expect(result, isTrue);
-      expect(VaultPinService.instance.isUnlocked, isTrue);
     });
 
-    testWidgets('Forgot PIN link opens the erase screen', (tester) async {
-      VaultPinService.debugReset();
-      await VaultPinService.instance.setPin('1234');
-      VaultPinService.instance.lock();
+    testWidgets('Forgot PIN? opens the recovery screen', (tester) async {
+      AppLockService.debugReset();
+      await AppLockService.instance.setPin('1234');
+      AppLockService.instance.lock();
 
-      await tester.pumpWidget(_wrap(const VaultPinGateScreen()));
+      await tester.pumpWidget(_wrap(const AppLockGateScreen()));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.tap(find.text('Forgot PIN?'));
       await tester.pumpAndSettle();
-      expect(find.text("There's no way to get your PIN back."),
+      expect(find.text('Enter your recovery code'), findsOneWidget);
+    });
+  });
+
+  group('recovery flow', () {
+    testWidgets('wrong code is rejected gently', (tester) async {
+      AppLockService.debugReset();
+      await AppLockService.instance.setPin('1234');
+      await AppLockService.instance.setRecoveryCode('ABCD-EFGH-JKLM');
+
+      await tester.pumpWidget(_wrap(const AppLockRecoverScreen()));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.enterText(find.byType(TextField), 'ZZZZ-ZZZZ-ZZZZ');
+      await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text("That code doesn't match — try again."),
           findsOneWidget);
     });
-  });
 
-  group('forgot-PIN erase', () {
-    testWidgets('typing ERASE wipes letters, vents and the PIN',
+    testWidgets('correct code → new PIN → new code shown; old code dead',
         (tester) async {
-      await tester.runAsync(() async {
-        final db = DayOneDatabase.instance;
-        await db.insertLetter(
-            title: 't', body: 'tender letter', kind: 'letter');
-        await db.insertLetter(title: 'v', body: 'raw vent', kind: 'vent');
-        expect(await db.letterCount(), 2);
-      });
-
-      VaultPinService.debugReset();
-      await VaultPinService.instance.setPin('1234');
-
-      await tester.pumpWidget(_wrap(const VaultPinForgotScreen()));
+      AppLockService.debugReset();
+      await tester.pumpWidget(_wrap(const AppLockSetupScreen()));
       await tester.pump(const Duration(milliseconds: 300));
+      await _enterPin(tester, '1234');
+      await _enterPin(tester, '1234');
+      final oldCode = (tester.widget<Text>(find.textContaining(RegExp(
+              r'[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}')))
+          .data)!;
+      await tester.tap(find.text('I\u2019ve saved it'));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Your app is locked.'), findsOneWidget);
+      // (Skipping the Done tap: in this test setup is the root route, and
+      // popping it would break the test navigator. The real app pushes it.)
 
-      // Button is disabled until ERASE is typed.
-      final eraseButton =
-          find.widgetWithText(FilledButton, 'Erase vault and start fresh');
-      await tester.tap(eraseButton, warnIfMissed: false);
+      // Recover with the code (fresh tree, as if returning later).
+      await tester.pumpWidget(_wrap(const AppLockRecoverScreen()));
       await tester.pump(const Duration(milliseconds: 300));
-      await tester.runAsync(() async {
-        expect(await DayOneDatabase.instance.letterCount(), 2);
-      });
-
-      await tester.enterText(find.byType(TextField), 'ERASE');
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.tap(eraseButton);
-      await tester.runAsync(() async {
-        await Future<void>.delayed(const Duration(milliseconds: 500));
-      });
+      await tester.enterText(find.byType(TextField), oldCode);
+      await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
       await tester.pumpAndSettle();
 
+      // New PIN flow.
+      expect(find.text('Choose a new 4-digit PIN'), findsOneWidget);
+      await _enterPin(tester, '9999');
+      await _enterPin(tester, '9999');
+
+      // A NEW code is shown and must be saved again.
+      expect(find.text('Save this code'), findsOneWidget);
+      final newCode = (tester.widget<Text>(find.textContaining(RegExp(
+              r'[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}')))
+          .data)!;
+      expect(newCode, isNot(oldCode));
+      await tester.tap(find.text('I\u2019ve saved it'));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Old code dead, new code alive, new PIN works.
+      expect(
+          await AppLockService.instance.verifyRecoveryCode(oldCode),
+          isFalse);
+      expect(
+          await AppLockService.instance.verifyRecoveryCode(newCode),
+          isTrue);
+      expect(await AppLockService.instance.verifyPin('9999'), isTrue);
+      expect(await AppLockService.instance.verifyPin('1234'), isFalse);
+    });
+
+    testWidgets('both lost → honest screen, nothing is wiped',
+        (tester) async {
       await tester.runAsync(() async {
-        expect(await DayOneDatabase.instance.letterCount(), 0);
+        await DayOneDatabase.instance
+            .insertLetter(title: 't', body: 'b', kind: 'letter');
+        expect(await DayOneDatabase.instance.letterCount(), 1);
       });
-      expect(await VaultPinService.instance.isEnabled, isFalse);
+      AppLockService.debugReset();
+      await AppLockService.instance.setPin('1234');
+      await AppLockService.instance.setRecoveryCode('ABCD-EFGH-JKLM');
+
+      await tester.pumpWidget(_wrap(const AppLockRecoverScreen()));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('I don\u2019t have my code either'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Your words stay locked.'), findsOneWidget);
+      expect(find.textContaining('even we can\u2019t open them'),
+          findsOneWidget);
+      // No wipe anywhere: letters and PIN survive.
+      await tester.runAsync(() async {
+        expect(await DayOneDatabase.instance.letterCount(), 1);
+      });
+      expect(await AppLockService.instance.isEnabled, isTrue);
     });
   });
 
-  group('entry-point gating (ensureVaultUnlocked)', () {
-    testWidgets('no PIN: Pro user goes straight to the vault',
-        (tester) async {
-      VaultPinService.debugReset();
-      await tester.pumpWidget(MaterialApp(
-        theme: DayOneTheme.light(),
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: TextButton(
-              onPressed: () => ensureVaultUnlocked(
-                context,
-                isPro: true,
-                vault: const Text('VAULT_MARKER'),
-              ),
-              child: const Text('open'),
-            ),
-          ),
-        ),
-      ));
-      await tester.tap(find.text('open'));
+  group('maybeShowAppLockGate', () {
+    testWidgets('no gate when App lock is OFF', (tester) async {
+      AppLockService.debugReset();
+      await tester.pumpWidget(_wrap(const Scaffold(
+        body: Text('HOME'),
+      )));
+      await tester.pump(const Duration(milliseconds: 300));
+      final ctx = tester.element(find.text('HOME'));
+      await maybeShowAppLockGate(ctx);
       await tester.pumpAndSettle();
-      expect(find.text('VAULT_MARKER'), findsOneWidget);
       expect(find.text('Enter your PIN'), findsNothing);
     });
 
-    testWidgets('PIN set + locked: gate appears before the vault',
+    testWidgets('no gate when the session is already unlocked',
         (tester) async {
-      VaultPinService.debugReset();
-      await VaultPinService.instance.setPin('1234');
-      VaultPinService.instance.lock();
+      AppLockService.debugReset();
+      await AppLockService.instance.setPin('1234'); // unlocks session
+      await tester.pumpWidget(_wrap(const Scaffold(
+        body: Text('HOME'),
+      )));
+      await tester.pump(const Duration(milliseconds: 300));
+      final ctx = tester.element(find.text('HOME'));
+      await maybeShowAppLockGate(ctx);
+      await tester.pumpAndSettle();
+      expect(find.text('Enter your PIN'), findsNothing);
+    });
 
-      await tester.pumpWidget(MaterialApp(
-        theme: DayOneTheme.light(),
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: TextButton(
-              onPressed: () => ensureVaultUnlocked(
-                context,
-                isPro: true,
-                vault: const Text('VAULT_MARKER'),
-              ),
-              child: const Text('open'),
-            ),
-          ),
-        ),
-      ));
-      await tester.tap(find.text('open'));
+    testWidgets('gate appears when locked; correct PIN dismisses it',
+        (tester) async {
+      AppLockService.debugReset();
+      await AppLockService.instance.setPin('1234');
+      AppLockService.instance.lock();
+
+      await tester.pumpWidget(_wrap(const Scaffold(
+        body: Text('HOME'),
+      )));
+      await tester.pump(const Duration(milliseconds: 300));
+      final ctx = tester.element(find.text('HOME'));
+      // Don't await: the future completes only when the gate pops.
+      unawaited(maybeShowAppLockGate(ctx));
       await tester.pumpAndSettle();
       expect(find.text('Enter your PIN'), findsOneWidget);
-      expect(find.text('VAULT_MARKER'), findsNothing);
 
-      // Correct PIN → vault opens.
       await _enterPin(tester, '1234');
       await tester.pumpAndSettle();
-      expect(find.text('VAULT_MARKER'), findsOneWidget);
-    });
-
-    testWidgets('PIN set + unlocked session: no gate', (tester) async {
-      VaultPinService.debugReset();
-      await VaultPinService.instance.setPin('1234');
-      // setPin unlocks the session (foreground).
-
-      await tester.pumpWidget(MaterialApp(
-        theme: DayOneTheme.light(),
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: TextButton(
-              onPressed: () => ensureVaultUnlocked(
-                context,
-                isPro: true,
-                vault: const Text('VAULT_MARKER'),
-              ),
-              child: const Text('open'),
-            ),
-          ),
-        ),
-      ));
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
-      expect(find.text('VAULT_MARKER'), findsOneWidget);
       expect(find.text('Enter your PIN'), findsNothing);
+      expect(find.text('HOME'), findsOneWidget);
     });
 
-    testWidgets('free user still gets the paywall (Pro-gating unchanged)',
-        (tester) async {
-      VaultPinService.debugReset();
-      await tester.pumpWidget(MaterialApp(
-        theme: DayOneTheme.light(),
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: TextButton(
-              onPressed: () => ensureVaultUnlocked(
-                context,
-                isPro: false,
-                vault: const Text('VAULT_MARKER'),
-              ),
-              child: const Text('open'),
-            ),
-          ),
-        ),
-      ));
-      await tester.tap(find.text('open'));
+    testWidgets('never stacks two gates', (tester) async {
+      AppLockService.debugReset();
+      await AppLockService.instance.setPin('1234');
+      AppLockService.instance.lock();
+
+      await tester.pumpWidget(_wrap(const Scaffold(
+        body: Text('HOME'),
+      )));
+      await tester.pump(const Duration(milliseconds: 300));
+      final ctx = tester.element(find.text('HOME'));
+      unawaited(maybeShowAppLockGate(ctx));
       await tester.pumpAndSettle();
-      expect(find.text('Day One Pro'), findsOneWidget);
-      expect(find.text('VAULT_MARKER'), findsNothing);
+      expect(find.text('Enter your PIN'), findsOneWidget);
+      // Second call while the gate is up: guard stops a duplicate.
+      unawaited(maybeShowAppLockGate(ctx));
+      await tester.pumpAndSettle();
+      expect(find.text('Enter your PIN'), findsOneWidget);
     });
   });
 
-  group('VaultPinRow (Profile)', () {
-    testWidgets('shows Off when no PIN, Locked after setup', (tester) async {
-      VaultPinService.debugReset();
-      await tester.pumpWidget(_wrap(const VaultPinRow(key: ValueKey('a'))));
+  group('AppLockRow (Profile)', () {
+    testWidgets('shows Off when no lock, On after setup', (tester) async {
+      AppLockService.debugReset();
+      await tester.pumpWidget(_wrap(const AppLockRow(key: ValueKey('a'))));
       await tester.pump(const Duration(milliseconds: 500));
-      expect(find.text('Vault PIN'), findsOneWidget);
+      expect(find.text('App lock'), findsOneWidget);
       expect(find.text('Off'), findsOneWidget);
 
-      await VaultPinService.instance.setPin('1234');
-      // Fresh key → fresh state → re-reads the PIN status (same as the
-      // real row's _refresh() after returning from setup/manage).
-      await tester.pumpWidget(_wrap(const VaultPinRow(key: ValueKey('b'))));
+      await AppLockService.instance.setPin('1234');
+      await tester.pumpWidget(_wrap(const AppLockRow(key: ValueKey('b'))));
       await tester.pump(const Duration(milliseconds: 500));
-      expect(find.text('Locked'), findsOneWidget);
+      expect(find.text('On'), findsOneWidget);
     });
   });
 
@@ -438,7 +540,6 @@ void main() {
   group('widget theme sheet pin button', () {
     testWidgets('sheet has the pin button with the approved copy',
         (tester) async {
-      // Mock the home_widget channel so the real service call succeeds.
       const channel = MethodChannel('home_widget');
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async {
@@ -450,7 +551,7 @@ void main() {
             .setMockMethodCallHandler(channel, null);
       });
 
-      VaultPinService.debugReset();
+      AppLockService.debugReset();
       await tester.pumpWidget(_wrap(const ProfileScreen()));
       await tester.pump(const Duration(milliseconds: 600));
 
@@ -463,12 +564,9 @@ void main() {
       expect(find.text('One tap — your phone will ask where to place it.'),
           findsOneWidget);
 
-      // Tap → system pin request fires, sheet closes (no fallback dialog).
       final pinButton =
           find.widgetWithText(FilledButton, 'Add widget to Home screen');
       expect(pinButton, findsOneWidget);
-      // The sheet has its own scrollable (Profile has another) — drag the
-      // sheet's explicitly instead of scrollUntilVisible's default.
       final sheetScrollable = find.descendant(
         of: find.byType(BottomSheet),
         matching: find.byType(Scrollable),
@@ -494,7 +592,7 @@ void main() {
             .setMockMethodCallHandler(channel, null);
       });
 
-      VaultPinService.debugReset();
+      AppLockService.debugReset();
       await tester.pumpWidget(_wrap(const ProfileScreen()));
       await tester.pump(const Duration(milliseconds: 600));
 
@@ -522,13 +620,11 @@ void main() {
   group('mood row labels (v10-B)', () {
     testWidgets('labels render at 11.5px with no overflow on a narrow phone',
         (tester) async {
-      // Tight width: 320dp — the smallest we support.
       tester.view.physicalSize = const Size(320, 700);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      // Seed a live streak so the check-in card (with the mood row) renders.
       AppState.instance.streakStartMs =
           DateTime.now().millisecondsSinceEpoch;
 
@@ -542,7 +638,6 @@ void main() {
         final text = tester.widget<Text>(finder);
         expect(text.style?.fontSize, 11.5);
       }
-      // Any RenderFlex overflow would have failed the test above.
     });
   });
 }

@@ -22,7 +22,7 @@ import 'main_shell.dart';
 import 'onboarding_screen.dart';
 import 'paywall_screen.dart';
 import 'program_screen.dart';
-import 'vault_pin_screen.dart';
+import 'app_lock_screen.dart';
 import 'vault_screen.dart';
 
 /// Support inbox for the "Send feedback" row.
@@ -1002,12 +1002,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: () => _openProFeature(
                         isPro, const ProgramScreen())),
                 _row('Letter vault', 'Write what you\'ll never send',
-                    onTap: () => ensureVaultUnlocked(
-                          context,
-                          isPro: isPro,
-                          vault: const VaultScreen(),
-                        )),
-                const VaultPinRow(),
+                    onTap: () =>
+                        _openProFeature(isPro, const VaultScreen())),
+                const AppLockRow(),
                 const SizedBox(height: 16),
                 const Text('Settings',
                     style: TextStyle(

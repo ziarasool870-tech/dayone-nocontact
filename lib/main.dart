@@ -15,8 +15,8 @@ import 'widgets/premium.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/main_shell.dart';
 import 'services/notification_service.dart';
-import 'services/vault_pin_service.dart';
-import 'screens/vault_pin_screen.dart';
+import 'services/app_lock_service.dart';
+import 'screens/app_lock_screen.dart';
 import 'data/database.dart';
 import 'screens/vault_screen.dart';
 
@@ -37,24 +37,18 @@ Future<void> main() async {
 
 /// Payloads: `vent:<id>` → open that vent in re-read mode.
 /// Anything else (or a missing/gone vent) → no-op, never a crash.
-/// When a vault PIN is set and the session is locked, the PIN gate comes
-/// first — a notification must never bypass the lock.
+/// With App lock ON and a locked session, a tap never bypasses the PIN pad:
+/// the app-level gate (_Gate on cold start, the resume handler otherwise)
+/// is already showing or about to show, so we simply don't open the vent.
 Future<void> _handleNotificationTap(String? payload) async {
   if (payload == null || !payload.startsWith('vent:')) return;
+  final lock = AppLockService.instance;
+  if (await lock.isEnabled && !lock.isUnlocked) return;
   final id = int.tryParse(payload.substring(5));
   if (id == null) return;
   final vent = await DayOneDatabase.instance.letterById(id);
   if (vent == null || (vent['kind'] as String?) != 'vent') return;
-  final nav = appNavigatorKey.currentState;
-  if (nav == null) return;
-  final pin = VaultPinService.instance;
-  if (await pin.isEnabled && !pin.isUnlocked) {
-    final ok = await nav.push<bool>(
-      FadeSlidePageRoute(child: const VaultPinGateScreen()),
-    );
-    if (ok != true) return;
-  }
-  nav.push(
+  appNavigatorKey.currentState?.push(
     FadeSlidePageRoute(child: VentReader(vent: vent)),
   );
 }
@@ -91,6 +85,10 @@ class _Gate extends StatefulWidget {
 class _GateState extends State<_Gate> {
   bool? _onboardingDone;
 
+  /// Cold-start app lock: true when App lock is ON and the session starts
+  /// locked — the PIN pad shows before ANY app content.
+  bool _locked = false;
+
   @override
   void initState() {
     super.initState();
@@ -99,9 +97,19 @@ class _GateState extends State<_Gate> {
 
   Future<void> _load() async {
     final prefs = await PrefsService.instance();
+    final lock = AppLockService.instance;
+    final locked = await lock.isEnabled && !lock.isUnlocked;
     if (mounted) {
-      setState(() => _onboardingDone = prefs.onboardingDone);
+      setState(() {
+        _onboardingDone = prefs.onboardingDone;
+        _locked = locked;
+      });
     }
+  }
+
+  void _onUnlocked() {
+    AppLockService.instance.unlock();
+    setState(() => _locked = false);
   }
 
   @override
@@ -120,6 +128,9 @@ class _GateState extends State<_Gate> {
           if (mounted) setState(() => _onboardingDone = true);
         },
       );
+    }
+    if (_locked) {
+      return AppLockGateScreen(onUnlocked: _onUnlocked);
     }
     return const MainShell();
   }

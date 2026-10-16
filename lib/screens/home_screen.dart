@@ -10,7 +10,6 @@ import '../data/prefs.dart';
 import '../domain/streak.dart' as streak_math;
 import '../services/billing_service.dart';
 import '../services/share_service.dart';
-import 'vault_pin_screen.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/premium.dart';
@@ -441,11 +440,11 @@ class _HomeScreenState extends State<HomeScreen> {
             final count = snap.data ?? 0;
             return GestureDetector(
               onTap: () {
-                // Vault entry choke point: Pro → paywall; Pro + PIN → PIN pad.
-                ensureVaultUnlocked(
-                  context,
-                  isPro: isPro,
-                  vault: const VaultScreen(),
+                Navigator.of(context).push(
+                  FadeSlidePageRoute(
+                    child:
+                        isPro ? const VaultScreen() : const PaywallScreen(),
+                  ),
                 );
               },
               child: Card(

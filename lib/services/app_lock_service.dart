@@ -1,4 +1,8 @@
-/// Vault PIN lock — whole-vault protection (Letters + Let it out).
+/// App lock — optional whole-app PIN protection (default OFF).
+///
+/// The user turns it on from Profile → "App lock". When on, the warm PIN pad
+/// appears before any app content on cold start and on return from
+/// background, and re-locks when the app goes to background.
 ///
 /// Security model (local-first, no account):
 /// - The raw PIN is NEVER stored anywhere — only a salted SHA-256 hash,
@@ -8,13 +12,16 @@
 ///   on a rooted device, so the real protection is Android's app sandbox +
 ///   EncryptedSharedPreferences. This keeps honest people (and nosy
 ///   friends/family) out — it is not a bank vault.
-/// - There is NO recovery path by design: "Forgot PIN" wipes the vault.
-///   The UI says this plainly before the user sets a PIN.
+/// - There is NO recovery path by design: "Forgot PIN" wipes the private
+///   content (vault letters + journal). The UI says this plainly before
+///   the user sets a PIN.
 ///
-/// Session rule: once unlocked, the vault stays unlocked while the app is
-/// in the foreground. [lock] is called when the app goes to background
-/// (MainShell's WidgetsBindingObserver) and the flag starts locked, so a
-/// cold start always requires the PIN.
+/// Session rule: once unlocked, the app stays unlocked while in the
+/// foreground. [lock] is called when the app goes to background
+/// (MainShell's WidgetsBindingObserver, on paused only — system dialogs
+/// like the widget-pin prompt trigger inactive without leaving the app,
+/// and must not re-lock). The flag starts locked, so a cold start with
+/// App lock ON always asks for the PIN.
 library;
 
 import 'dart:convert';
@@ -114,24 +121,24 @@ class ResilientPinStorage implements PinStorage {
   Future<void> deleteAll() => _guard((s) => s.deleteAll());
 }
 
-class VaultPinService {
-  VaultPinService._(this._storage);
+class AppLockService {
+  AppLockService._(this._storage);
 
   static const _kHashKey = 'vault_pin_hash';
   static const _kSaltKey = 'vault_pin_salt';
 
   final PinStorage _storage;
 
-  static VaultPinService? _instance;
+  static AppLockService? _instance;
 
   /// Production singleton (secure storage, resilient in tests).
-  static VaultPinService get instance =>
-      _instance ??= VaultPinService._(ResilientPinStorage());
+  static AppLockService get instance =>
+      _instance ??= AppLockService._(ResilientPinStorage());
 
   /// Test seam: replace the singleton with an in-memory-backed one.
   @visibleForTesting
   static void debugReset({PinStorage? storage}) {
-    _instance = VaultPinService._(storage ?? MemoryPinStorage());
+    _instance = AppLockService._(storage ?? MemoryPinStorage());
     _instance!._unlockedInSession = false;
   }
 
@@ -174,15 +181,66 @@ class VaultPinService {
     return _constantTimeEquals(_hash(pin, salt), stored);
   }
 
-  /// Remove the PIN (hash + salt). Letters are untouched.
+  /// Remove the PIN (hash + salt). App data is untouched.
   Future<void> clearPin() async {
     await _storage.delete(_kHashKey);
     await _storage.delete(_kSaltKey);
     _unlockedInSession = false;
   }
 
-  /// Wipe the vault's secrets entirely (used by "Forgot PIN" erase).
-  Future<void> wipeSecrets() => clearPin();
+  /// Remove the PIN and the recovery code together (turning App lock off).
+  Future<void> clearAll() async {
+    await clearPin();
+    await _storage.delete(_kRecoveryHashKey);
+    await _storage.delete(_kRecoverySaltKey);
+  }
+
+  // ------------------------------------------------------------------
+  // Recovery code: the ONLY way back in after a forgotten PIN.
+  // Shown to the user exactly once at setup; only its salted hash is
+  // stored — never the plaintext. A successful recovery always rotates
+  // to a brand-new code (the old one is invalidated).
+  // ------------------------------------------------------------------
+
+  static const _kRecoveryHashKey = 'app_lock_recovery_hash';
+  static const _kRecoverySaltKey = 'app_lock_recovery_salt';
+
+  /// Unambiguous alphabet: no 0/O, no 1/I.
+  static const _codeChars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+  /// Generates a 12-character code in XXXX-XXXX-XXXX form.
+  static String generateRecoveryCode() {
+    final chars = List<String>.generate(
+        12, (_) => _codeChars[_random.nextInt(_codeChars.length)]);
+    final raw = chars.join();
+    return '${raw.substring(0, 4)}-${raw.substring(4, 8)}-${raw.substring(8, 12)}';
+  }
+
+  /// Whether a recovery code is currently set.
+  Future<bool> get hasRecoveryCode async =>
+      (await _storage.read(_kRecoveryHashKey)) != null;
+
+  /// Store a recovery code (salted hash only — never [code]).
+  /// Replaces any previous code, invalidating it.
+  Future<void> setRecoveryCode(String code) async {
+    final salt = _randomSalt();
+    final hash = _hash(_normalizeCode(code), salt);
+    await _storage.write(_kRecoverySaltKey, salt);
+    await _storage.write(_kRecoveryHashKey, hash);
+  }
+
+  /// Check a candidate code. Accepts lowercase and ignores dashes/spaces
+  /// so typed codes are forgiving.
+  Future<bool> verifyRecoveryCode(String code) async {
+    final salt = await _storage.read(_kRecoverySaltKey);
+    final stored = await _storage.read(_kRecoveryHashKey);
+    if (salt == null || stored == null) return false;
+    return _constantTimeEquals(_hash(_normalizeCode(code), salt), stored);
+  }
+
+  /// Canonical form for hashing/comparison: uppercase, no separators.
+  static String _normalizeCode(String code) =>
+      code.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
 
   String _randomSalt() {
     final bytes = List<int>.generate(16, (_) => _random.nextInt(256));

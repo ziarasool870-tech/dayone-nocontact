@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/premium.dart';
-import '../services/vault_pin_service.dart';
+import '../services/app_lock_service.dart';
+import 'app_lock_screen.dart';
 import 'home_screen.dart';
 import 'journal_screen.dart';
 import 'milestones_screen.dart';
@@ -36,15 +37,22 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  /// Vault PIN session rule: the vault stays unlocked only while the app is
-  /// in the foreground. Backgrounding re-locks it, so returning to the app
-  /// always asks for the PIN again.
+  /// App lock session rule: re-lock when the app is no longer visible.
+  /// `paused` only — `inactive` also fires for system dialogs (like the
+  /// widget-pin prompt) that never leave the app, and those must NOT
+  /// re-lock. On return, the PIN gate covers the app before content shows.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {
-      VaultPinService.instance.lock();
+    if (state == AppLifecycleState.paused) {
+      AppLockService.instance.lock();
+    } else if (state == AppLifecycleState.resumed) {
+      _maybeShowGate();
     }
+  }
+
+  Future<void> _maybeShowGate() async {
+    if (!mounted) return;
+    await maybeShowAppLockGate(context);
   }
 
   void _openSos() {
