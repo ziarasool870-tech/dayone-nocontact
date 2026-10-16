@@ -221,24 +221,37 @@ class _LetterComposerState extends State<LetterComposer> {
         backgroundColor: DayOneColors.card,
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('✉️', style: TextStyle(fontSize: 44)),
-            SizedBox(height: 12),
-            Text('Sealed.',
+            const Text('✉️', style: TextStyle(fontSize: 44)),
+            const SizedBox(height: 12),
+            const Text('Sealed.',
                 style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
-            SizedBox(height: 6),
-            Text("It's yours now. You never have to send it.",
+            const SizedBox(height: 6),
+            const Text("It's yours now. You never have to send it.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 14.5, height: 1.5, color: DayOneColors.muted)),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: DayOneColors.terracotta,
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: const Text('See your letters'),
+              ),
+            ),
           ],
         ),
       ),
     );
     if (!mounted) return;
-    Navigator.of(context).pop(true);
+    // Forward: land on the vault list with the new letter on top.
+    await returnToVaultList(context);
   }
 
   @override
@@ -294,6 +307,24 @@ class _LetterComposerState extends State<LetterComposer> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// After the sealing dialog closes, land on the vault list.
+/// Normally the composer was pushed above [VaultScreen], so a plain pop
+/// returns there (and triggers its reload). Defensively, if the composer
+/// was somehow opened standalone, swap to the vault list instead of
+/// popping into void.
+@visibleForTesting
+Future<void> returnToVaultList(BuildContext context) async {
+  if (!context.mounted) return;
+  final nav = Navigator.of(context);
+  if (nav.canPop()) {
+    nav.pop(true);
+  } else {
+    nav.pushReplacement(
+      FadeSlidePageRoute(child: const VaultScreen()),
     );
   }
 }

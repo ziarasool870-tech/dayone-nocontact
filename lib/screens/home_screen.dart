@@ -15,6 +15,15 @@ import '../theme/app_theme.dart';
 import '../widgets/premium.dart';
 import 'paywall_screen.dart';
 import 'program_screen.dart';
+import 'vault_screen.dart';
+
+/// Subtitle for the Home letter-vault card.
+@visibleForTesting
+String vaultCardSubtitle({required bool isPro, required int count}) {
+  if (!isPro) return 'Write what you\'ll never send · Pro';
+  if (count == 0) return 'No sealed letters yet';
+  return '$count sealed letter${count == 1 ? '' : 's'}';
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -273,6 +282,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 // 90-day guided program (Pro)
                 _programCard(context, days),
                 const SizedBox(height: 12),
+                // Letter vault (Pro)
+                _vaultCard(context),
+                const SizedBox(height: 12),
                 // Next milestone
                 Card(
                   child: Padding(
@@ -394,6 +406,83 @@ class _HomeScreenState extends State<HomeScreen> {
                               isPro
                                   ? 'Day $today of 90 · $done tasks done'
                                   : 'A 2-minute healing task a day · Pro',
+                              style: const TextStyle(
+                                  fontSize: 13.5,
+                                  color: DayOneColors.muted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right,
+                          color: DayOneColors.faint),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Letter vault card (Pro). Tapping opens the vault for
+  /// Pro users, the paywall for everyone else.
+  Widget _vaultCard(BuildContext context) {
+    return ValueListenableBuilder(
+      valueListenable: BillingService.instance.uiState,
+      builder: (ctx, billing, _) {
+        final isPro = billing.isPro;
+        return FutureBuilder<int>(
+          future: DayOneDatabase.instance.letterCount(),
+          builder: (ctx, snap) {
+            final count = snap.data ?? 0;
+            return GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  FadeSlidePageRoute(
+                    child:
+                        isPro ? const VaultScreen() : const PaywallScreen(),
+                  ),
+                );
+              },
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: DayOneColors.terracottaSoft,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(Icons.mail_outline,
+                            color: DayOneColors.terracottaDeep),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Expanded(
+                                  child: Text('Letter vault',
+                                      style: TextStyle(
+                                          fontSize: 15.5,
+                                          fontWeight: FontWeight.w700)),
+                                ),
+                                if (!isPro)
+                                  const Icon(Icons.lock_outline,
+                                      size: 16,
+                                      color: DayOneColors.faint),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              vaultCardSubtitle(isPro: isPro, count: count),
                               style: const TextStyle(
                                   fontSize: 13.5,
                                   color: DayOneColors.muted),

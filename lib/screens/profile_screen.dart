@@ -530,6 +530,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  /// App version shown in the About sheet. Keep in sync with pubspec.yaml.
+  static const _appVersion = '1.0.9';
+
+  /// About sheet: studio credit, mission line, version. No personal names,
+  /// no location — English only.
+  void _aboutSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Day One: No Contact',
+                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 10),
+            const Text('Made with care by Daybreak Studio',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: DayOneColors.ink)),
+            const SizedBox(height: 8),
+            const Text(
+                'For anyone healing, one day at a time. Your words never leave your phone.',
+                style: TextStyle(
+                    fontSize: 15.5, height: 1.6, color: DayOneColors.muted)),
+            const SizedBox(height: 12),
+            Text('Version $_appVersion',
+                style: const TextStyle(
+                    fontSize: 13.5, color: DayOneColors.faint)),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// "On · 8:00 PM" / "Off" / "Off — permission needed" for the
   /// notifications row. Never claims "On" when reminders cannot fire.
   String _reminderSummary(AppState app) {
@@ -1013,6 +1053,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _row('A gentle note (disclaimer)', '', onTap: _disclaimerSheet),
                 _row('Send feedback', 'Tell us what\'s helping, or what hurts',
                     onTap: _sendFeedback),
+                _row('About', 'Made with care by Daybreak Studio',
+                    onTap: _aboutSheet),
                 const SizedBox(height: 20),
                 const Center(
                   child: Text(

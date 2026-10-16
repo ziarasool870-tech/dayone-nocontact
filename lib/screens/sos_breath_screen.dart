@@ -414,6 +414,30 @@ class _ReasonsSheetState extends State<_ReasonsSheet> {
   }
 }
 
+/// "Text a friend instead": open the SMS app with a warm starter pre-filled,
+/// so the tap always does what the card promises. Never fails silently.
+/// [launch] is a test seam; production uses [launchUrl].
+@visibleForTesting
+Future<void> launchSmsIntent(
+  BuildContext context, {
+  Future<bool> Function(Uri uri, {LaunchMode mode}) launch = launchUrl,
+}) async {
+  final uri = Uri(
+    scheme: 'sms',
+    queryParameters: {'body': 'One good thing about today: '},
+  );
+  final ok = await launch(uri, mode: LaunchMode.externalApplication);
+  if (!ok && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content:
+            Text("Couldn't open messages — your words matter, try again."),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+}
+
 class SosOptionsScreen extends StatelessWidget {
   const SosOptionsScreen({super.key});
 
@@ -531,7 +555,7 @@ class SosOptionsScreen extends StatelessWidget {
                       icon: Icons.forum_outlined,
                       title: 'Text a friend instead',
                       sub: 'Tell them one good thing about today',
-                      onTap: () => launchUrl(Uri(scheme: 'sms')),
+                      onTap: () => launchSmsIntent(context),
                     ),
                     const Spacer(flex: 2),
                     _crisisCard(context),
