@@ -405,7 +405,7 @@ void main() {
   });
 
   group('D. SOS pill geometry at 320px', () {
-    testWidgets('pill does not overlap the bottom nav (~4px gap)',
+    testWidgets('pill does not overlap the bottom nav (16dp gap)',
         (tester) async {
       await _seedDb(tester);
       _smallScreen(tester);
@@ -417,8 +417,8 @@ void main() {
       expect(pill.overlaps(nav), isFalse,
           reason: 'SOS pill $pill overlaps bottom nav $nav');
       final gap = nav.top - pill.bottom;
-      expect(gap, inInclusiveRange(2, 8),
-          reason: 'pill should dock ~4px above the nav, gap was $gap');
+      expect(gap, inInclusiveRange(12, 20),
+          reason: 'pill should sit 16dp above the nav, gap was $gap');
     });
 
     testWidgets('pill clears tab content at max scroll on all 3 tabs',

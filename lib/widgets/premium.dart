@@ -431,7 +431,10 @@ class SosFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 4),
+      // 16dp bottom margin: matches the Scaffold FAB margin (kFloatingActionButtonMargin),
+      // so the pill shares the exact baseline of the Journal "New entry" FAB,
+      // and keeps comfortable breathing room above the bottom nav on Home/Milestones.
+      margin: const EdgeInsets.only(bottom: 16),
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(

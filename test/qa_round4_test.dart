@@ -2,7 +2,8 @@
 /// 1. Journal editor: typed text + hint must be VISIBLE (ink text, faint hint).
 /// 2. Date page: quick-pick chips (Today / Yesterday / A week ago) sync with
 ///    the grid selection; the live preview line updates on tap.
-/// 3. SOS pill docks tight above the bottom nav (~4px gap, not floating high).
+/// 3. SOS pill sits 16dp above the bottom nav (breathing room, and the same
+///    baseline as the Journal "New entry" FAB).
 /// 4. No-overlap: tab scroll views clear the pill zone; no RenderFlex
 ///    overflow at small size + large text scale.
 library;
@@ -219,7 +220,8 @@ void main() {
             )
             .first,
       );
-      expect((container.margin as EdgeInsets).bottom, 4);
+      expect((container.margin as EdgeInsets).bottom, 16,
+          reason: 'pill needs breathing room above the nav');
     });
 
     testWidgets('on Journal tab the pill docks left, clear of the FAB',
@@ -239,7 +241,7 @@ void main() {
         matching: find.byType(ElevatedButton),
       ));
       final navRect = tester.getRect(find.byType(BottomNavigationBar));
-      // Pill button sits ~4px above the nav…
+      // Pill button sits 16dp above the nav…
       expect(pillRect.bottom, lessThanOrEqualTo(navRect.top - 2));
       // …and hugs the left side on the Journal tab (FAB lives right).
       expect(pillRect.left, lessThan(120));
@@ -296,6 +298,49 @@ void main() {
       );
       expect((sv.padding as EdgeInsets).bottom, greaterThanOrEqualTo(140),
           reason: 'content must clear the floating SOS pill');
+    });
+  });
+
+  group('5. QA round 5 (v6) — user-reported device issues', () {
+    testWidgets('"Yes, held strong" label is centered in its button',
+        (tester) async {
+      AppState.instance.streakStartMs =
+          DateTime.now().millisecondsSinceEpoch;
+      await tester.runAsync(() async {
+        await tester.pumpWidget(_wrap(const MainShell()));
+        await Future<void>.delayed(const Duration(milliseconds: 800));
+      });
+      await tester.pump(const Duration(milliseconds: 500));
+
+      final label = tester.widget<Text>(find.text('Yes, held strong'));
+      expect(label.textAlign, TextAlign.center,
+          reason: 'two-line label must not lean left');
+    });
+
+    testWidgets('SOS pill shares the Journal FAB baseline', (tester) async {
+      AppState.instance.streakStartMs =
+          DateTime.now().millisecondsSinceEpoch;
+      await tester.runAsync(() async {
+        await tester.pumpWidget(_wrap(const MainShell()));
+        await Future<void>.delayed(const Duration(milliseconds: 800));
+      });
+      await tester.pump(const Duration(milliseconds: 500));
+
+      final container = tester.widget<Container>(
+        find
+            .ancestor(
+              of: find.descendant(
+                of: find.byType(SosFab),
+                matching: find.byType(ElevatedButton),
+              ),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      // Must equal the Scaffold FAB margin so both bottom edges align.
+      expect((container.margin as EdgeInsets).bottom,
+          kFloatingActionButtonMargin,
+          reason: 'pill bottom must match the Scaffold FAB margin');
     });
   });
 }

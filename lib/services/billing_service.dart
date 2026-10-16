@@ -81,6 +81,14 @@ class BillingService {
     final prefs = await PrefsService.instance();
     uiState.value = uiState.value.copyWith(isPro: prefs.isPro);
 
+    // TEST ONLY — never enable in release builds. Force-unlocks Pro for the
+    // owner's PROTEST build, compiled with --dart-define=PRO_UNLOCKED=true.
+    // The Play Billing flow is untouched; this flag is off by default.
+    if (const bool.fromEnvironment('PRO_UNLOCKED')) {
+      await prefs.setPro(true);
+      uiState.value = uiState.value.copyWith(isPro: true);
+    }
+
     _sub = _iap.purchaseStream.listen(
       _onPurchases,
       onError: (Object e) => _setError('Billing error: $e'),

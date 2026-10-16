@@ -3,6 +3,13 @@ name: Build Day One APK
 # Manual trigger only — run from the Actions tab or via API dispatch.
 on:
   workflow_dispatch:
+    inputs:
+      pro_unlocked:
+        description: 'PROTEST variant: force-unlock Pro (test only, never for users)'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
 
 jobs:
   build:
@@ -28,7 +35,12 @@ jobs:
 
       # 100% local-first build — no cloud keys, no backend, no network URLs.
       - name: Build release APK
-        run: flutter build apk --release --split-per-abi
+        run: |
+          if [ "${{ inputs.pro_unlocked }}" = "true" ]; then
+            flutter build apk --release --split-per-abi --dart-define=PRO_UNLOCKED=true
+          else
+            flutter build apk --release --split-per-abi
+          fi
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

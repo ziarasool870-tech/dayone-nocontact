@@ -73,7 +73,7 @@ class _MainShellState extends State<MainShell> {
           IndexedStack(index: _tab, children: pages),
           // On the Journal tab the right-aligned "New entry" FAB would collide
           // with a centered pill on narrow phones — dock the pill left there
-          // so the two never overlap (pill stays 4px above the nav).
+          // so the two never overlap (pill shares the FAB's 16dp baseline).
           Positioned(
             left: 0,
             right: 0,
