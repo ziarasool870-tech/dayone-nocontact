@@ -23,43 +23,53 @@ class SosBreathScreen extends StatelessWidget {
         backgroundColor: DayOneColors.cream,
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            children: [
-              const SizedBox(height: 18),
-              const Text('Breathe with me',
-                  style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: DayOneColors.ink)),
-              const SizedBox(height: 8),
-              const BreathCircle(),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: PressScale(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pushReplacement(
-                        FadeSlidePageRoute(child: const SosOptionsScreen()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: DayOneColors.sos),
-                    child: const Text('I need more help'),
-                  ),
+        // Scroll-safe on short screens / large fonts: circle stays centered
+        // on tall phones, content scrolls instead of overflowing on small ones.
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 18),
+                    const Text('Breathe with me',
+                        style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            color: DayOneColors.ink)),
+                    const SizedBox(height: 8),
+                    const BreathCircle(),
+                    const Spacer(),
+                    SizedBox(
+                      width: double.infinity,
+                      child: PressScale(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pushReplacement(
+                              FadeSlidePageRoute(
+                                  child: const SosOptionsScreen()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: DayOneColors.sos),
+                          child: const Text('I need more help'),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () =>
+                          Navigator.of(context).popUntil((r) => r.isFirst),
+                      child: const Text("I'm okay now",
+                          style: TextStyle(color: DayOneColors.muted)),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () =>
-                    Navigator.of(context).popUntil((r) => r.isFirst),
-                child: const Text("I'm okay now",
-                    style: TextStyle(color: DayOneColors.muted)),
-              ),
-              const SizedBox(height: 20),
-            ],
+            ),
           ),
         ),
       ),

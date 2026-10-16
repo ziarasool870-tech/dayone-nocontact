@@ -57,7 +57,7 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
           final next = streak_math.nextMilestone(days);
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 140),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -70,11 +70,16 @@ class _MilestonesScreenState extends State<MilestonesScreen> {
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
-                    childAspectRatio: 0.92,
+                    // Taller tiles at large text scales so "X days to go"
+                    // never overflows on small screens. 0.75 at default size.
+                    childAspectRatio: 0.75 /
+                        MediaQuery.textScalerOf(context)
+                            .scale(1.0)
+                            .clamp(1.0, 2.0),
                   ),
                   itemCount: streak_math.milestoneDays.length,
                   itemBuilder: (context, i) {

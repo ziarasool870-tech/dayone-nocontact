@@ -139,7 +139,7 @@ class _JournalScreenState extends State<JournalScreen> {
                               onRefresh: _reload,
                               child: ListView.separated(
                                 padding:
-                                    const EdgeInsets.fromLTRB(20, 8, 20, 120),
+                                    const EdgeInsets.fromLTRB(20, 8, 20, 140),
                                 itemCount: _filtered.length,
                                 separatorBuilder: (_, __) =>
                                     const SizedBox(height: 10),
@@ -222,54 +222,82 @@ class _JournalScreenState extends State<JournalScreen> {
                 ),
       floatingActionButton: _entries.isEmpty
           ? null
-          : Padding(
-              padding: const EdgeInsets.only(bottom: 70),
-              child: FloatingActionButton.extended(
-                onPressed: () => _openEditor(),
-                backgroundColor: DayOneColors.terracotta,
-                foregroundColor: Colors.white,
-                icon: const Icon(Icons.add),
-                label: const Text('New entry'),
-              ),
+          : Builder(
+              builder: (context) {
+                // On narrow phones the wide extended FAB would collide
+                // with the SOS pill docked at bottom-left — fall back to
+                // a compact circular FAB so the two never overlap.
+                if (MediaQuery.sizeOf(context).width < 360) {
+                  return FloatingActionButton(
+                    onPressed: () => _openEditor(),
+                    backgroundColor: DayOneColors.terracotta,
+                    foregroundColor: Colors.white,
+                    tooltip: 'New entry',
+                    child: const Icon(Icons.add),
+                  );
+                }
+                return FloatingActionButton.extended(
+                  onPressed: () => _openEditor(),
+                  backgroundColor: DayOneColors.terracotta,
+                  foregroundColor: Colors.white,
+                  icon: const Icon(Icons.add),
+                  label: const Text('New entry'),
+                );
+              },
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
   Widget _empty() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: DayOneColors.terracottaSoft,
+    // Scroll-safe: at small widths + large text scales the copy wraps
+    // taller than the viewport — scroll instead of overflowing, while
+    // staying vertically centered when there is room.
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: DayOneColors.terracottaSoft,
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.edit_note,
+                        size: 32, color: DayOneColors.terracotta),
+                  ),
+                  const SizedBox(height: 18),
+                  const Text('Write it here, not to them.',
+                      style: TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'The text you don\'t send is the streak you keep. Start your first entry.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 15.5,
+                        height: 1.5,
+                        color: DayOneColors.muted),
+                  ),
+                  const SizedBox(height: 18),
+                  ElevatedButton(
+                    onPressed: () => _openEditor(),
+                    child: const Text('Write first entry'),
+                  ),
+                ],
               ),
-              alignment: Alignment.center,
-              child: const Icon(Icons.edit_note,
-                  size: 32, color: DayOneColors.terracotta),
             ),
-            const SizedBox(height: 18),
-            const Text('Write it here, not to them.',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 8),
-            const Text(
-              'The text you don\'t send is the streak you keep. Start your first entry.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  fontSize: 15.5, height: 1.5, color: DayOneColors.muted),
-            ),
-            const SizedBox(height: 18),
-            ElevatedButton(
-              onPressed: () => _openEditor(),
-              child: const Text('Write first entry'),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -277,32 +305,44 @@ class _JournalScreenState extends State<JournalScreen> {
 
   /// Warm empty state when the search matches nothing.
   Widget _noMatches() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.search_off, size: 40, color: DayOneColors.faint),
-            const SizedBox(height: 14),
-            const Text('Nothing found',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 8),
-            Text(
-              'No entries mention "${_query.trim()}" yet.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  fontSize: 15, height: 1.5, color: DayOneColors.muted),
+    // Scroll-safe like _empty(): never overflow at large text scales.
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.search_off,
+                      size: 40, color: DayOneColors.faint),
+                  const SizedBox(height: 14),
+                  const Text('Nothing found',
+                      style: TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No entries mention "${_query.trim()}" yet.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 15, height: 1.5, color: DayOneColors.muted),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () {
+                      _searchCtrl.clear();
+                      setState(() => _query = '');
+                    },
+                    child: const Text('Clear search'),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () {
-                _searchCtrl.clear();
-                setState(() => _query = '');
-              },
-              child: const Text('Clear search'),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -385,13 +425,17 @@ class _JournalEditorState extends State<JournalEditor> {
               controller: _title,
               decoration: const InputDecoration(
                 hintText: 'Title (optional)',
+                hintStyle: TextStyle(color: DayOneColors.faint),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 filled: false,
                 contentPadding: EdgeInsets.zero,
               ),
-              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+              style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                  color: DayOneColors.ink),
             ),
             const Divider(color: DayOneColors.line, height: 24),
             Expanded(
@@ -403,13 +447,15 @@ class _JournalEditorState extends State<JournalEditor> {
                 autofocus: isNew,
                 decoration: const InputDecoration(
                   hintText: 'What are you feeling right now? Write it all out…',
+                  hintStyle: TextStyle(color: DayOneColors.faint),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   filled: false,
                   contentPadding: EdgeInsets.zero,
                 ),
-                style: const TextStyle(fontSize: 17, height: 1.6),
+                style: const TextStyle(
+                    fontSize: 17, height: 1.6, color: DayOneColors.ink),
               ),
             ),
             const Text('Private · stored only on your phone',

@@ -431,7 +431,7 @@ class SosFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
+      margin: const EdgeInsets.only(bottom: 4),
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(

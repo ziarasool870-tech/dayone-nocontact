@@ -71,11 +71,22 @@ class _MainShellState extends State<MainShell> {
       body: Stack(
         children: [
           IndexedStack(index: _tab, children: pages),
+          // On the Journal tab the right-aligned "New entry" FAB would collide
+          // with a centered pill on narrow phones — dock the pill left there
+          // so the two never overlap (pill stays 4px above the nav).
           Positioned(
             left: 0,
             right: 0,
-            bottom: 70,
-            child: Center(child: SosFab(onTap: _openSos)),
+            bottom: 0,
+            child: _tab == 1
+                ? Padding(
+                    padding: const EdgeInsets.only(left: 20),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: SosFab(onTap: _openSos),
+                    ),
+                  )
+                : Center(child: SosFab(onTap: _openSos)),
           ),
         ],
       ),

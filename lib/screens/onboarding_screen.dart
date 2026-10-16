@@ -152,12 +152,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // ------------------------------------------------------------ page 1
 
   Widget _welcomePage() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const BreathingAppIcon(),
+    // Scroll-safe on short screens / large fonts: content centers on tall
+    // phones, scrolls instead of overflowing on small ones.
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: IntrinsicHeight(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const BreathingAppIcon(),
           const SizedBox(height: 26),
           const Text('DAY ONE',
               style: TextStyle(
@@ -185,11 +191,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   fontSize: 14.5,
                   fontWeight: FontWeight.w600,
                   color: DayOneColors.terracottaDeep)),
-        ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
-
   // ------------------------------------------------------------ page 2
 
   Widget _datePage() {
@@ -224,8 +232,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   fontSize: 14.5,
                   fontStyle: FontStyle.italic,
                   color: DayOneColors.terracottaDeep)),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+          _quickChips(),
+          const SizedBox(height: 14),
           _monthGrid(),
+          const SizedBox(height: 12),
+          _previewLine(),
           const SizedBox(height: 12),
           const Text(
             'Pick the day you last had contact. Yesterday counts too — honesty keeps the streak real.',
@@ -258,6 +270,90 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     'November',
     'December'
   ];
+
+  /// Quick-pick chips above the grid: Today / Yesterday / A week ago.
+  /// Single-select — the chip matching [_startDate] is active; tapping a
+  /// chip sets the date (and jumps the grid to that month).
+  Widget _quickChips() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final options = <String, DateTime>{
+      'Today': today,
+      'Yesterday': today.subtract(const Duration(days: 1)),
+      'A week ago': today.subtract(const Duration(days: 7)),
+    };
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: options.entries.map((e) {
+        final active = _isSameDay(e.value, _startDate);
+        return GestureDetector(
+          onTap: () => setState(() {
+            _startDate = e.value;
+            _shownMonth = DateTime(e.value.year, e.value.month);
+          }),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            decoration: BoxDecoration(
+              color: active ? DayOneColors.terracotta : Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: active
+                    ? DayOneColors.terracotta
+                    : DayOneColors.cardBorder,
+                width: 1.5,
+              ),
+              boxShadow: active
+                  ? [
+                      BoxShadow(
+                        color: DayOneColors.terracotta.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Text(e.key,
+                style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: active ? Colors.white : DayOneColors.muted)),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  /// Live preview under the grid: "♥ 16 October 2026 · Day 1 starts here".
+  Widget _previewLine() {
+    final d = _startDate;
+    final label = '${d.day} ${_monthNames[d.month - 1]} ${d.year}';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      decoration: BoxDecoration(
+        color: DayOneColors.terracottaSoft,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.favorite,
+              size: 14, color: DayOneColors.terracottaDeep),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text('$label · Day 1 starts here',
+                style: const TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                    color: DayOneColors.ink)),
+          ),
+        ],
+      ),
+    );
+  }
 
   /// Full-month calendar grid for picking the streak start day.
   /// Back to Jan 2020 (matches Profile's start-date picker),
@@ -305,28 +401,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             alignment: Alignment.center,
             child: selected
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('$d',
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white)),
-                      const SizedBox(width: 3),
-                      const Icon(Icons.favorite, size: 10, color: Colors.white),
-                    ],
+                ? FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('$d',
+                            style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white)),
+                        const SizedBox(width: 3),
+                        const Icon(Icons.favorite,
+                            size: 10, color: Colors.white),
+                      ],
+                    ),
                   )
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('$d',
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: disabled
-                                  ? DayOneColors.faint
-                                  : DayOneColors.ink)),
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text('$d',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: disabled
+                                      ? DayOneColors.faint
+                                      : DayOneColors.ink)),
+                        ),
+                      ),
                       if (isToday)
                         const Text('•',
                             style: TextStyle(
@@ -346,7 +451,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: Column(
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
                   onPressed: canGoBack
@@ -356,11 +460,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   color: DayOneColors.terracotta,
                   disabledColor: DayOneColors.faint,
                 ),
-                Text('${_monthNames[m - 1]} $y',
-                    style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: DayOneColors.ink)),
+                Expanded(
+                  child: Center(
+                    child: Text('${_monthNames[m - 1]} $y',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: DayOneColors.ink)),
+                  ),
+                ),
                 IconButton(
                   onPressed: canGoForward
                       ? () => setState(() => _shownMonth = DateTime(y, m + 1))

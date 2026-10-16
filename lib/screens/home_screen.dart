@@ -88,45 +88,49 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(relapseTitle, style: Theme.of(ctx).textTheme.headlineMedium),
-            const SizedBox(height: 10),
-            Text(relapseBody,
-                style: const TextStyle(
-                    fontSize: 16, height: 1.55, color: DayOneColors.muted)),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () async {
-                  Navigator.of(ctx).pop();
-                  await AppState.instance.relapse();
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content:
-                            Text('Day 1 again. Your history stays with you.'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                },
-                child: const Text('Restart at Day 1'),
+        // Scrollable so the sheet never overflows on small screens at
+        // large system font sizes.
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(relapseTitle, style: Theme.of(ctx).textTheme.headlineMedium),
+              const SizedBox(height: 10),
+              Text(relapseBody,
+                  style: const TextStyle(
+                      fontSize: 16, height: 1.55, color: DayOneColors.muted)),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    Navigator.of(ctx).pop();
+                    await AppState.instance.relapse();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content:
+                              Text('Day 1 again. Your history stays with you.'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Restart at Day 1'),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Keep my streak',
-                    style: TextStyle(color: DayOneColors.muted)),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Keep my streak',
+                      style: TextStyle(color: DayOneColors.muted)),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -155,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 140),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -269,22 +273,26 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              next == null
-                                  ? 'All milestones unlocked'
-                                  : 'Next milestone · Day $next',
-                              style: const TextStyle(
-                                  fontSize: 15.5, fontWeight: FontWeight.w700),
+                            Expanded(
+                              child: Text(
+                                next == null
+                                    ? 'All milestones unlocked'
+                                    : 'Next milestone · Day $next',
+                                style: const TextStyle(
+                                    fontSize: 15.5,
+                                    fontWeight: FontWeight.w700),
+                              ),
                             ),
-                            if (next != null)
+                            if (next != null) ...[
+                              const SizedBox(width: 8),
                               Text(
                                   '${next - streak_math.displayDay(days)} to go',
                                   style: const TextStyle(
                                       fontSize: 14.5,
                                       fontWeight: FontWeight.w700,
                                       color: DayOneColors.terracotta)),
+                            ],
                           ],
                         ),
                         const SizedBox(height: 10),
