@@ -3,8 +3,10 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../core/content.dart';
+import '../core/mood_colors.dart';
 import '../data/database.dart';
 import '../data/prefs.dart';
 import '../domain/streak.dart' as streak_math;
@@ -556,9 +558,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return FutureBuilder<List<Map<String, Object?>>>(
       future: DayOneDatabase.instance.allCheckIns(),
       builder: (context, snap) {
-        final byDate = <String, bool>{};
+        final byDate = <String, Map<String, int>>{};
         for (final r in snap.data ?? const []) {
-          byDate[r['date'] as String] = (r['held'] as num?)?.toInt() == 1;
+          byDate[r['date'] as String] = {
+            'held': (r['held'] as num?)?.toInt() ?? 0,
+            'mood': (r['mood'] as num?)?.toInt() ?? -1,
+          };
         }
         final now = DateTime.now();
         final days = List.generate(
@@ -578,9 +583,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: days.map((d) {
                     final key =
                         '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-                    final held = byDate[key];
+                    final entry = byDate[key];
+                    final rawMood = entry?['mood'] ?? -1;
+                    final mood =
+                        (rawMood >= 0 && rawMood <= 4) ? rawMood : null;
+                    final held = entry != null && entry['held'] == 1;
+                    final slipped = entry != null && !held;
                     final isToday = key == AppState.todayKey();
-                    return Column(
+                    final dot = Column(
                       children: [
                         Text('SMTWTFS'[d.weekday % 7],
                             style: const TextStyle(
@@ -594,29 +604,49 @@ class _HomeScreenState extends State<HomeScreen> {
                           height: 30,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: held == null
-                                ? const Color(0xFFF4F1EC)
-                                : held
-                                    ? DayOneColors.sage
-                                    : DayOneColors.terracotta
-                                        .withValues(alpha: 0.35),
-                            border: isToday
+                            color: MoodColors.forMood(mood),
+                            border: (isToday || slipped)
                                 ? Border.all(
                                     color: DayOneColors.terracotta, width: 2)
                                 : null,
                           ),
                           alignment: Alignment.center,
                           child: Text('${d.day}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
-                                  color: held == true
-                                      ? Colors.white
-                                      : DayOneColors.ink)),
+                                  color: DayOneColors.ink)),
                         ),
                       ],
                     );
+                    return Tooltip(
+                      message: mood == null
+                          ? '${DateFormat('MMM d').format(d)} · No check-in'
+                          : '${DateFormat('MMM d').format(d)} · ${MoodColors.wordFor(mood)}',
+                      child: dot,
+                    );
                   }).toList(),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  children: [
+                    for (var i = 0; i < moodWords.length; i++)
+                      Container(
+                        width: 9,
+                        height: 9,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: MoodColors.forMood(i),
+                        ),
+                      ),
+                    const SizedBox(width: 4),
+                    const Text('Rough → Great',
+                        style: TextStyle(
+                            fontSize: 10, color: DayOneColors.muted)),
+                  ],
                 ),
               ],
             ),

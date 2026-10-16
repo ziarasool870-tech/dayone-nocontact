@@ -23,6 +23,7 @@ import 'onboarding_screen.dart';
 import 'paywall_screen.dart';
 import 'program_screen.dart';
 import 'app_lock_screen.dart';
+import 'mood_journey_screen.dart';
 import 'vault_screen.dart';
 
 /// Support inbox for the "Send feedback" row.
@@ -1004,6 +1005,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _row('Letter vault', 'Write what you\'ll never send',
                     onTap: () =>
                         _openProFeature(isPro, const VaultScreen())),
+                _row('Mood journey', 'See how your heart has been',
+                    onTap: () => Navigator.of(context).push(
+                        FadeSlidePageRoute(
+                            child: const MoodJourneyScreen()))),
                 const AppLockRow(),
                 const SizedBox(height: 16),
                 const Text('Settings',
