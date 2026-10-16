@@ -14,6 +14,7 @@ import '../services/backup_service.dart';
 import '../services/billing_service.dart';
 import '../services/notification_service.dart';
 import '../services/share_service.dart';
+import '../services/widget_pin_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/premium.dart';
@@ -21,6 +22,7 @@ import 'main_shell.dart';
 import 'onboarding_screen.dart';
 import 'paywall_screen.dart';
 import 'program_screen.dart';
+import 'vault_pin_screen.dart';
 import 'vault_screen.dart';
 
 /// Support inbox for the "Send feedback" row.
@@ -98,7 +100,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-        child: Column(
+        // Scrollable: theme options + pin button must never clip
+        // on small screens or large font sizes.
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -122,8 +127,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
               locked: !isPro,
               isPro: isPro,
             ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => _addWidgetToHomeScreen(ctx),
+                icon: const Icon(Icons.add_to_home_screen_rounded, size: 20),
+                label: const Text('Add widget to Home screen'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: DayOneColors.terracotta,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'One tap — your phone will ask where to place it.',
+              style: TextStyle(fontSize: 13.5, color: DayOneColors.muted),
+            ),
           ],
+          ),
         ),
+      ),
+    );
+  }
+
+  /// One-tap widget install. Uses Android's pin-widget request; when the
+  /// launcher doesn't support it, shows the manual steps instead.
+  Future<void> _addWidgetToHomeScreen(BuildContext sheetContext) async {
+    final pinned = await WidgetPinService().requestPin();
+    if (!mounted) return;
+    if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+    if (pinned) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add the widget yourself'),
+        content: const Text(
+          'Your phone asked us not to place it automatically. It takes a moment:\n\n1. Pinch in on your Home screen\n2. Tap Widgets\n3. Find Day One and drag it where you like',
+          style: TextStyle(height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Got it'),
+          ),
+        ],
       ),
     );
   }
@@ -953,8 +1002,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: () => _openProFeature(
                         isPro, const ProgramScreen())),
                 _row('Letter vault', 'Write what you\'ll never send',
-                    onTap: () =>
-                        _openProFeature(isPro, const VaultScreen())),
+                    onTap: () => ensureVaultUnlocked(
+                          context,
+                          isPro: isPro,
+                          vault: const VaultScreen(),
+                        )),
+                const VaultPinRow(),
                 const SizedBox(height: 16),
                 const Text('Settings',
                     style: TextStyle(

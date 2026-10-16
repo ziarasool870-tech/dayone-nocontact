@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/premium.dart';
+import '../services/vault_pin_service.dart';
 import 'home_screen.dart';
 import 'journal_screen.dart';
 import 'milestones_screen.dart';
@@ -20,8 +21,31 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   int _tab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Vault PIN session rule: the vault stays unlocked only while the app is
+  /// in the foreground. Backgrounding re-locks it, so returning to the app
+  /// always asks for the PIN again.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      VaultPinService.instance.lock();
+    }
+  }
 
   void _openSos() {
     Navigator.of(context).push(

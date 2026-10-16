@@ -1,7 +1,7 @@
 name: day_one_nocontact
 description: "Day One: No Contact — breakup recovery companion. Streak tracking, journaling, SOS support, milestone cards."
 publish_to: "none"
-version: 1.0.10+11
+version: 1.0.11+12
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
@@ -33,6 +33,10 @@ dependencies:
 
   # Android home-screen widget
   home_widget: ^0.8.0
+
+  # Vault PIN: keystore-backed encrypted storage for the PIN hash + salt.
+  # The raw PIN is never written anywhere.
+  flutter_secure_storage: ^9.2.4
 
   # Tappable crisis-helpline numbers (tel: links)
   url_launcher: ^6.3.1

@@ -15,6 +15,8 @@ import 'widgets/premium.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/main_shell.dart';
 import 'services/notification_service.dart';
+import 'services/vault_pin_service.dart';
+import 'screens/vault_pin_screen.dart';
 import 'data/database.dart';
 import 'screens/vault_screen.dart';
 
@@ -35,13 +37,24 @@ Future<void> main() async {
 
 /// Payloads: `vent:<id>` → open that vent in re-read mode.
 /// Anything else (or a missing/gone vent) → no-op, never a crash.
+/// When a vault PIN is set and the session is locked, the PIN gate comes
+/// first — a notification must never bypass the lock.
 Future<void> _handleNotificationTap(String? payload) async {
   if (payload == null || !payload.startsWith('vent:')) return;
   final id = int.tryParse(payload.substring(5));
   if (id == null) return;
   final vent = await DayOneDatabase.instance.letterById(id);
   if (vent == null || (vent['kind'] as String?) != 'vent') return;
-  appNavigatorKey.currentState?.push(
+  final nav = appNavigatorKey.currentState;
+  if (nav == null) return;
+  final pin = VaultPinService.instance;
+  if (await pin.isEnabled && !pin.isUnlocked) {
+    final ok = await nav.push<bool>(
+      FadeSlidePageRoute(child: const VaultPinGateScreen()),
+    );
+    if (ok != true) return;
+  }
+  nav.push(
     FadeSlidePageRoute(child: VentReader(vent: vent)),
   );
 }

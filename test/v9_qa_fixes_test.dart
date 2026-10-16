@@ -186,21 +186,22 @@ void main() {
   group('Home vault card subtitle', () {
     test('free user sees the Pro teaser', () {
       expect(vaultCardSubtitle(isPro: false, count: 0),
-          'Write what you\'ll never send · Pro');
+          'Letters · Let it out · Pro');
     });
 
     test('pro user with no letters', () {
-      expect(vaultCardSubtitle(isPro: true, count: 0), 'No sealed letters yet');
+      expect(vaultCardSubtitle(isPro: true, count: 0),
+          'Letters · Let it out — nothing sealed yet');
     });
 
-    test('pro user with one letter (singular)', () {
-      expect(
-          vaultCardSubtitle(isPro: true, count: 1), '1 sealed letter');
+    test('pro user with sealed letters names both tabs', () {
+      expect(vaultCardSubtitle(isPro: true, count: 1),
+          'Letters · Let it out — 1 sealed');
     });
 
-    test('pro user with several letters (plural)', () {
-      expect(
-          vaultCardSubtitle(isPro: true, count: 5), '5 sealed letters');
+    test('pro user with several letters', () {
+      expect(vaultCardSubtitle(isPro: true, count: 5),
+          'Letters · Let it out — 5 sealed');
     });
   });
 

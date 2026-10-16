@@ -10,6 +10,7 @@ import '../data/prefs.dart';
 import '../domain/streak.dart' as streak_math;
 import '../services/billing_service.dart';
 import '../services/share_service.dart';
+import 'vault_pin_screen.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/premium.dart';
@@ -18,11 +19,12 @@ import 'program_screen.dart';
 import 'vault_screen.dart';
 
 /// Subtitle for the Home letter-vault card.
+/// Names both tabs so users instantly know what's inside.
 @visibleForTesting
 String vaultCardSubtitle({required bool isPro, required int count}) {
-  if (!isPro) return 'Write what you\'ll never send · Pro';
-  if (count == 0) return 'No sealed letters yet';
-  return '$count sealed letter${count == 1 ? '' : 's'}';
+  if (!isPro) return 'Letters · Let it out · Pro';
+  if (count == 0) return 'Letters · Let it out — nothing sealed yet';
+  return 'Letters · Let it out — $count sealed';
 }
 
 class HomeScreen extends StatefulWidget {
@@ -439,11 +441,11 @@ class _HomeScreenState extends State<HomeScreen> {
             final count = snap.data ?? 0;
             return GestureDetector(
               onTap: () {
-                Navigator.of(context).push(
-                  FadeSlidePageRoute(
-                    child:
-                        isPro ? const VaultScreen() : const PaywallScreen(),
-                  ),
+                // Vault entry choke point: Pro → paywall; Pro + PIN → PIN pad.
+                ensureVaultUnlocked(
+                  context,
+                  isPro: isPro,
+                  vault: const VaultScreen(),
                 );
               },
               child: Card(
@@ -539,7 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
               alignment: Alignment.center,
               child: Text(moods[i],
                   style: TextStyle(
-                      fontSize: 10.5,
+                      fontSize: 11.5,
                       fontWeight: FontWeight.w700,
                       color: selected
                           ? DayOneColors.terracottaDeep
