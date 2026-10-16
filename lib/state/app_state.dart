@@ -171,6 +171,10 @@ class AppState extends ChangeNotifier {
     await prefs.setStreakStartMs(next.currentStartMs);
     await prefs.setLongestDays(next.longestDays);
     await prefs.setTotalCleanDays(next.totalCleanDays);
+    // The 90-day program follows the same journey: a new streak means
+    // a new Day 1. Completed tasks are cleared, kindly — the copy on the
+    // program screen frames this as "your tasks waited for you".
+    await prefs.setProgramDoneDays({});
     streakStartMs = next.currentStartMs;
     longestDays = next.longestDays;
     totalCleanDays = next.totalCleanDays;

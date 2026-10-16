@@ -20,6 +20,8 @@ import '../widgets/premium.dart';
 import 'main_shell.dart';
 import 'onboarding_screen.dart';
 import 'paywall_screen.dart';
+import 'program_screen.dart';
+import 'vault_screen.dart';
 
 /// Support inbox for the "Send feedback" row.
 const kSupportEmail = 'support@dayonenocontact.app';
@@ -413,8 +415,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _whySheet() {
-    showModalBottomSheet(
+  /// Opens a Pro-gated feature: the feature itself for Pro users,
+  /// the paywall for everyone else.
+  void _openProFeature(bool isPro, Widget feature) {
+    Navigator.of(context).push(
+      FadeSlidePageRoute(child: isPro ? feature : const PaywallScreen()),
+    );
+  }
+
+  void _whySheet() {    showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -893,6 +902,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ),
+                const SizedBox(height: 16),
+                const Text('Healing',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: DayOneColors.muted)),
+                const SizedBox(height: 8),
+                _row('90-day program', 'A 2-minute healing task a day',
+                    onTap: () => _openProFeature(
+                        isPro, const ProgramScreen())),
+                _row('Letter vault', 'Write what you\'ll never send',
+                    onTap: () =>
+                        _openProFeature(isPro, const VaultScreen())),
                 const SizedBox(height: 16),
                 const Text('Settings',
                     style: TextStyle(

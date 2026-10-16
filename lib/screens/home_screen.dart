@@ -6,11 +6,15 @@ import 'package:flutter/material.dart';
 
 import '../core/content.dart';
 import '../data/database.dart';
+import '../data/prefs.dart';
 import '../domain/streak.dart' as streak_math;
+import '../services/billing_service.dart';
 import '../services/share_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/premium.dart';
+import 'paywall_screen.dart';
+import 'program_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -266,6 +270,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
+                // 90-day guided program (Pro)
+                _programCard(context, days),
+                const SizedBox(height: 12),
                 // Next milestone
                 Card(
                   child: Padding(
@@ -321,6 +328,87 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+
+  /// 90-day guided program card (Pro). Tapping opens the program for
+  /// Pro users, the paywall for everyone else.
+  Widget _programCard(BuildContext context, int elapsedDays) {
+    final today = streak_math.displayDay(elapsedDays).clamp(1, 90);
+    return ValueListenableBuilder(
+      valueListenable: BillingService.instance.uiState,
+      builder: (ctx, billing, _) {
+        final isPro = billing.isPro;
+        return FutureBuilder<Set<int>>(
+          future: PrefsService.instance().then((p) => p.programDoneDays),
+          builder: (ctx, snap) {
+            final done = snap.data?.length ?? 0;
+            return GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  FadeSlidePageRoute(
+                    child: isPro
+                        ? const ProgramScreen()
+                        : const PaywallScreen(),
+                  ),
+                );
+              },
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: DayOneColors.terracottaSoft,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(Icons.auto_stories_outlined,
+                            color: DayOneColors.terracottaDeep),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Expanded(
+                                  child: Text('90-day program',
+                                      style: TextStyle(
+                                          fontSize: 15.5,
+                                          fontWeight: FontWeight.w700)),
+                                ),
+                                if (!isPro)
+                                  const Icon(Icons.lock_outline,
+                                      size: 16,
+                                      color: DayOneColors.faint),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              isPro
+                                  ? 'Day $today of 90 · $done tasks done'
+                                  : 'A 2-minute healing task a day · Pro',
+                              style: const TextStyle(
+                                  fontSize: 13.5,
+                                  color: DayOneColors.muted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right,
+                          color: DayOneColors.faint),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
     );

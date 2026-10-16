@@ -43,6 +43,7 @@ class PrefsService {
   static const kMilestonesSeen = 'dayone.milestones_seen';
   static const kCustomReasons = 'dayone.custom_reasons';
   static const kHiddenDefaultReasons = 'dayone.hidden_default_reasons';
+  static const kProgramDoneDays = 'dayone.program_done_days';
 
   bool get onboardingDone => _prefs.getBool(kOnboardingDone) ?? false;
   Future<void> setOnboardingDone(bool v) => _prefs.setBool(kOnboardingDone, v);
@@ -134,6 +135,25 @@ class PrefsService {
 
   Future<void> setHiddenDefaultReasons(Set<int> indices) =>
       _prefs.setString(kHiddenDefaultReasons, jsonEncode(indices.toList()));
+
+  /// Program days (1..90) the user completed. Stored as a JSON int list.
+  /// Cleared on streak reset — the program follows the same journey.
+  Set<int> get programDoneDays {
+    final raw = _prefs.getString(kProgramDoneDays);
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) {
+        return decoded.whereType<num>().map((e) => e.toInt()).toSet();
+      }
+    } catch (_) {
+      // Corrupt payload: start fresh rather than crash.
+    }
+    return {};
+  }
+
+  Future<void> setProgramDoneDays(Set<int> days) =>
+      _prefs.setString(kProgramDoneDays, jsonEncode(days.toList()));
 
   /// All settings as a plain map for the encrypted export feature.
   Map<String, Object?> exportSettings() {
