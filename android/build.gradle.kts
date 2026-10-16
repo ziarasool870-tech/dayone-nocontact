@@ -53,6 +53,10 @@ subprojects {
 subprojects {
     pluginManager.withPlugin("com.android.library") {
         afterEvaluate {
+            // flutter_secure_storage 10.x declares Java 17 itself and its
+            // code uses Java 16+ pattern matching — forcing it down to 11
+            // breaks its build, so it keeps its own compileOptions.
+            if (project.name == "flutter_secure_storage") return@afterEvaluate
             tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
                 compilerOptions {
                     jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
